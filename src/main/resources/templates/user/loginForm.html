@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<!-- loginForm.jsp → Thymeleaf. head/header/footer 는 공통 fragment 재사용 -->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<!-- 공통 head 조각을 가져오되, 이 페이지 제목('로그인')을 인자로 넘김 -->
+<head th:replace="~{fragments/common :: head('로그인')}"></head>
+
+<body>
+
+<!-- 공통 헤더(네비) 조각 -->
+<div th:replace="~{fragments/common :: header}"></div>
+
+<div class="container my-5" style="max-width: 480px;">
+
+    <a th:href="@{/}" class="d-block text-center mb-4 text-decoration-none">
+        <strong style="font-size: 28px;">Noexit</strong>
+    </a>
+
+    <div class="ne-sc">
+        <div class="ne-sc-title fs-5">로그인</div>
+
+        <form th:action="@{/user/login}" method="post">
+
+            <div class="mb-3">
+                <label for="loginId" class="form-label">아이디</label>
+                <input type="text" id="loginId" name="loginId" class="form-control">
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">비밀번호</label>
+                <input type="password" id="password" name="password" class="form-control">
+                <div class="text-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">로그인</button>
+        </form>
+    </div>
+
+    <div class="text-center mt-3 small">
+        <a th:href="@{/user/enroll}">회원가입</a>
+        <span class="mx-2 text-muted">|</span>
+        <a th:href="@{/user/findId}">아이디 찾기</a>
+        <span class="mx-2 text-muted">|</span>
+        <a th:href="@{/user/findPw}">비밀번호 찾기</a>
+    </div>
+
+</div>
+
+<!-- 공통 푸터 조각 -->
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>

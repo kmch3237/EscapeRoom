@@ -4,17 +4,21 @@ import java.io.IOException;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.noexit.app.model.User;
+import com.noexit.app.model.UserEnrollForm;
 import com.noexit.app.service.MailService;
 import com.noexit.app.service.UserService;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -121,19 +125,22 @@ public class UserController {
 
 	// 회원가입 폼
 	@GetMapping("/enroll")
-	public String enrollForm() {
+	public String enrollForm(Model model) {
+		// th:object 가 바인딩할 빈 폼 객체를 미리 넣어줌 (없으면 th:object 에러)
+		model.addAttribute("enrollForm", new UserEnrollForm());
 		return "user/enrollForm";
 	}
 
 	// 회원가입 처리
 	@PostMapping("/enroll")
-	public String enroll(User user) {
-		try {
-			service.enroll(user);
-		} catch (Exception e) {
-			log.info("enroll : ", e);
+	public String enroll(@Valid @ModelAttribute("enrollForm") UserEnrollForm form,
+						 BindingResult result) {
+		// 서버 검증 실패 → 폼으로 되돌림 (th:errors 가 메시지 표시). JS 우회 공격도 여기서 막힘
+		if (result.hasErrors()) {
+			return "user/enrollForm";
 		}
-		return "redirect:/";
+		service.enroll(form.toUser());   // 검증 통과분만 도메인으로 변환해 저장
+		return "redirect:/user/login";   // 가입 후 로그인 페이지로
 	}
 
 	// 로그인 폼

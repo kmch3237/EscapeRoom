@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!--
+  공통 조각 모음 (head / header / footer).
+  각 페이지가 th:replace 로 끌어다 씀 → JSP include 의 "문서 중첩/CSS 중복" 문제 해결.
+-->
+
+<!-- ① 공통 head: meta·CSS 한 곳에. title 은 페이지마다 다르니 파라미터(title)로 받음 -->
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <title th:text="${title}">noExit</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/dist/css/common.css}">
+    <style>
+        .mainNav { font-size: 22px; font-weight: bold; height: 100%; width: 450px; }
+        .subNav  { position: relative; font-size: 18px; top: 0px; }
+        .nickname{ position: absolute; top: -20px; right: 40px; font-size: 14px; color: #333; width: 200px; text-align: right; }
+    </style>
+</head>
+
+<!-- ② 공통 header (네비게이션). sessionScope.X → Thymeleaf 는 ${session.X} -->
+<header th:fragment="header">
+    <div class="ne-header d-flex justify-content-between align-items-center">
+        <div class="logo">
+            <h1 class="m-0">
+                <a th:href="@{/}" class="no-hover">
+                    <img th:src="@{/dist/images/logo2.png}" alt="로고이미지" style="height: 80px;">
+                </a>
+            </h1>
+        </div>
+        <div class="nav-right d-flex mainNav justify-content-between align-items-center">
+            <ul class="d-flex m-0 gap-3">
+                <li><a th:href="@{/party/list}">PARTY</a></li>
+                <li><a th:href="@{/theme/list}">THEME</a></li>
+            </ul>
+            <ul class="d-flex m-0 gap-3 subNav">
+                <!-- 역할별 메뉴: JSTL && → Thymeleaf 는 'and' -->
+                <li th:if="${session.loginUser != null and session.role == 'OWNER'}">
+                    <a th:href="@{/owner/openRes}">테마관리</a>
+                </li>
+                <li th:if="${session.loginUser != null and session.role == 'MANAGER'}">
+                    <a th:href="@{/owner/attendance}">출석체크</a>
+                </li>
+
+                <!-- JSTL c:choose/when/otherwise 는 Thymeleaf 에 없음 → 배타 조건을 명시적으로 -->
+                <!-- (1) 관리자 -->
+                <th:block th:if="${session.loginAdmin != null}">
+                    <li><span th:text="|${session.loginAdmin.loginId}(관리자)|"></span></li>
+                    <li><a th:href="@{/admin/dashboard}">관리</a></li>
+                    <li><a th:href="@{/admin/logout}">로그아웃</a></li>
+                </th:block>
+                <!-- (2) 로그인 유저 -->
+                <th:block th:if="${session.loginAdmin == null and session.loginUser != null}">
+                    <li><a th:href="@{/mypage/record}">MYPAGE</a></li>
+                    <li class="nickname"><span th:text="|${session.loginUser.nickname}님|"></span></li>
+                    <li><a th:href="@{/user/logout}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box-arrow-in-right" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M6 3.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 0-1 0v2A1.5 1.5 0 0 0 6.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-8A1.5 1.5 0 0 0 5 3.5v2a.5.5 0 0 0 1 0z"/>
+                            <path fill-rule="evenodd" d="M11.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H1.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
+                        </svg></a></li>
+                </th:block>
+                <!-- (3) 비로그인 -->
+                <li th:if="${session.loginAdmin == null and session.loginUser == null}">
+                    <a th:href="@{/user/login}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+                            <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+                            <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+                        </svg>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<!-- ③ 공통 footer (+ bootstrap JS 스크립트) -->
+<th:block th:fragment="footer">
+    <footer class="ne-footer">
+        <div class="ne-container text-center" style="color: #666; line-height: 80px;">
+            &copy; 2026 NoExit. All rights reserved. 본 사이트는 포트폴리오 용도로 제작되었습니다.
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</th:block>
+
+</html>

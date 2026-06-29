@@ -1,5 +1,5 @@
 server:
-  port: 3306
+  port: 8080
   servlet:
     encoding:
       charset: UTF-8
@@ -14,15 +14,15 @@ spring:
       prefix: /WEB-INF/views/
       suffix: .jsp
   datasource:
-    url: jdbc:oracle:thin:@//211.238.142.123/xe
+    url: jdbc:oracle:thin:@//localhost:1521/XEPDB1
     hikari:
-      username: SAPIENS
-      password: java1234
+      username: noexit
+      password: noexit
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USER}
-    password: ${MAIL_PASS}
+    username: ${MAIL_USER:noreply@example.com}
+    password: ${MAIL_PASS:dummy}
     properties:
       mail:
         smtp:

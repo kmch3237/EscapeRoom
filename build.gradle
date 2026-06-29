@@ -40,6 +40,12 @@ dependencies {
 	implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl'
 	
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	// JSP -> Thymeleaf 점진 전환용 (JSP와 공존). templates/*.html 을 렌더 가능하게 함
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+	// 서버사이드 검증 (@Valid, @NotBlank 등 Bean Validation)
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 }
 
 tasks.named('test') {

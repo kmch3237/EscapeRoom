@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/common :: head('회원가입')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<div class="container my-5" style="max-width: 560px;">
+
+    <a th:href="@{/}" class="d-block text-center mb-4 text-decoration-none">
+        <strong style="font-size: 28px;">Noexit</strong>
+    </a>
+
+    <div class="ne-sc">
+        <div class="ne-sc-title fs-5">회원가입</div>
+
+        <!-- th:object: 이 폼 전체가 'user' 객체와 연결됨 -->
+        <form th:action="@{/user/enroll}" th:object="${enrollForm}" method="post" id="signUpForm">
+
+            <div class="mb-3">
+                <label for="loginId" class="form-label">아이디<span class="form-required">*</span></label>
+                <div class="input-group">
+                    <!-- th:field 가 id="loginId" name="loginId" 를 자동 생성 -->
+                    <input type="text" th:field="*{loginId}" class="form-control" placeholder="6~15자 영문/숫자">
+                    <button type="button" id="idChkBtn" class="btn btn-outline-primary">중복확인</button>
+                </div>
+                <span id="error" class="small" style="display: none;"></span>
+                <div class="text-danger small" th:errors="*{loginId}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">비밀번호<span class="form-required">*</span></label>
+                <input type="password" th:field="*{password}" class="form-control" placeholder="8자 이상">
+                <span id="pwError" class="small" style="display: none;"></span>
+                <div class="text-danger small" th:errors="*{password}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="passwordConfirm" class="form-label">비밀번호 확인<span class="form-required">*</span></label>
+                <!-- passwordConfirm 은 User 필드가 아님(클라이언트 확인용) → th:field 안 씀, plain -->
+                <input type="password" id="passwordConfirm" class="form-control" placeholder="비밀번호 한 번 더 입력">
+                <span id="pwConfirmError" class="small" style="display: none;"></span>
+            </div>
+
+            <div class="mb-3">
+                <label for="nickname" class="form-label">닉네임<span class="form-required">*</span></label>
+                <input type="text" th:field="*{nickname}" class="form-control" placeholder="2~10자">
+                <span id="nickError" class="small" style="display: none;"></span>
+                <div class="text-danger small" th:errors="*{nickname}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="name" class="form-label">이름<span class="form-required">*</span></label>
+                <input type="text" th:field="*{name}" class="form-control">
+                <span id="nameError" class="small" style="display: none;"></span>
+                <div class="text-danger small" th:errors="*{name}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">이메일<span class="form-required">*</span></label>
+                <input type="email" th:field="*{email}" class="form-control">
+                <span id="emailError" class="small" style="display: none;"></span>
+                <div class="text-danger small" th:errors="*{email}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="phone" class="form-label">연락처<span class="form-required">*</span></label>
+                <input type="text" th:field="*{phone}" class="form-control" maxlength="11" placeholder="하이픈 없이 11자리">
+                <span id="phoneError" class="small" style="display: none;"></span>
+                <div class="text-danger small" th:errors="*{phone}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">성별</label>
+                <div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="gender" value="M" id="genderM">
+                        <label class="form-check-label" for="genderM">남</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="gender" value="F" id="genderF">
+                        <label class="form-check-label" for="genderF">여</label>
+                    </div>
+                </div>
+                <span id="genderError" class="small" style="display: none;"></span>
+                <div class="text-danger small" th:errors="*{gender}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="birthDate" class="form-label">생년월일</label>
+                <input type="date" th:field="*{birthDate}" class="form-control">
+                <span id="birthError" class="small" style="display: none;"></span>
+                <div class="text-danger small" th:errors="*{birthDate}"></div>
+            </div>
+
+            <div class="text-end mt-4">
+                <button type="button" id="signUpBtn" class="btn btn-primary">가입하기</button>
+                <button type="button" class="btn btn-outline-primary" onclick="history.back()">취소</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- jQuery + 검증 스크립트 (페이지 로직 — 그대로) -->
+<script src="https://code.jquery.com/jquery.min.js"></script>
+<script type="text/javascript">
+$(function(){
+    let isIdChecked = false;
+
+    $("#idChkBtn").click(function(){
+        $("#error").css("display", "none");
+        let loginId = $("#loginId").val().trim();
+        if (loginId === "") {
+            $("#error").html("아이디를 입력해주세요.").css({color: "red", display: "inline"});
+            $("#loginId").focus(); return;
+        }
+        if (!/^(?=.*[a-zA-Z])[a-zA-Z0-9]{6,15}$/.test(loginId)) {
+            $("#error").html("아이디는 6~15자 영문+숫자(영문 1자 이상 필수)로 입력해주세요.").css({color: "red", display: "inline"});
+            $("#loginId").focus(); return;
+        }
+        $("#loginId").on("input", function(){ if (isIdChecked) isIdChecked = false; });
+        $.ajax({
+            type: "POST",
+            url: "/user/id-check",
+            data: { loginId: loginId },
+            success: function(result){
+                if (result === "OK") {
+                    $("#error").html("사용 가능한 아이디입니다.").css({color: "blue", display: "inline"});
+                    isIdChecked = true;
+                } else {
+                    $("#error").html("이미 사용 중인 아이디입니다.").css({color: "red", display: "inline"});
+                    $("#loginId").val("").focus();
+                }
+            },
+            error: function(){ $("#error").html("오류가 발생했습니다.").css({color: "red", display: "inline"}); }
+        });
+    });
+
+    $("#signUpBtn").click(function(){
+        $("#error,#pwError,#pwConfirmError,#nickError,#emailError,#nameError,#phoneError,#genderError,#birthError").css("display", "none");
+        if (!isIdChecked) { $("#error").html("아이디 중복 확인은 필수입니다.").css({color: "red", display: "inline"}); $("#idChkBtn").focus(); return; }
+        let pw = $("#password").val();
+        if (pw.length < 8) { $("#pwError").html("비밀번호는 8자 이상이어야 합니다.").css({color: "red", display: "inline"}); $("#password").focus(); return; }
+        if (pw !== $("#passwordConfirm").val()) { $("#pwConfirmError").html("비밀번호가 일치하지 않습니다.").css({color: "red", display: "inline"}); $("#passwordConfirm").focus(); return; }
+        let nick = $("#nickname").val().trim();
+        if (nick.length < 2 || nick.length > 10) { $("#nickError").html("닉네임은 2~10자로 입력해주세요.").css({color: "red", display: "inline"}); $("#nickname").focus(); return; }
+        if ($("#name").val().trim() === "") { $("#nameError").html("이름을 입력해주세요.").css({color: "red", display: "inline"}); $("#name").focus(); return; }
+        if (!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test($("#email").val().trim())) { $("#emailError").html("올바른 이메일 형식이 아닙니다.").css({color: "red", display: "inline"}); $("#email").focus(); return; }
+        if (!/^\d{11}$/.test($("#phone").val().trim())) { $("#phoneError").html("연락처는 11자리 숫자만 입력해주세요.").css({color: "red", display: "inline"}); $("#phone").focus(); return; }
+        if ($("input[name='gender']:checked").length === 0) { $("#genderError").html("성별을 선택해주세요.").css({color: "red", display: "inline"}); return; }
+        if ($("#birthDate").val() === "") { $("#birthError").html("생년월일을 선택해주세요.").css({color: "red", display: "inline"}); $("#birthDate").focus(); return; }
+        $.ajax({
+            type: "POST",
+            url: "/user/email-check",
+            data: { email: $("#email").val().trim() },
+            success: function(result){
+                if (result === "OK") { $("#signUpForm").submit(); }
+                else { $("#emailError").html("이미 사용 중인 이메일입니다.").css({color: "red", display: "inline"}); $("#email").focus(); }
+            },
+            error: function(){ $("#emailError").html("오류가 발생했습니다.").css({color: "red", display: "inline"}); }
+        });
+    });
+});
+</script>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>
