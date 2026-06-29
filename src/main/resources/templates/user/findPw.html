@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/common :: head('비밀번호 찾기')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<div class="container my-5" style="max-width: 480px;">
+
+    <a th:href="@{/}" class="d-block text-center mb-4 text-decoration-none">
+        <strong style="font-size: 28px;">Noexit</strong>
+    </a>
+
+    <div class="ne-sc">
+        <div class="ne-sc-title fs-5">비밀번호 찾기</div>
+        <p class="ne-hint mb-3">가입하신 이름과 아이디를 입력해주세요.</p>
+
+        <form id="findPwForm">
+
+            <div class="mb-3">
+                <label for="name" class="form-label">이름</label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="이름 입력">
+            </div>
+
+            <div class="mb-3">
+                <label for="userId" class="form-label">아이디</label>
+                <div class="input-group">
+                    <input type="text" id="userId" name="userId" class="form-control" placeholder="아이디 입력">
+                    <button type="button" id="authBtn" class="btn btn-outline-primary">인증요청</button>
+                </div>
+            </div>
+
+            <div class="mb-3" id="authCodeArea" style="display:none;">
+                <label for="authCode" class="form-label">인증번호</label>
+                <div class="input-group">
+                    <input type="text" id="authCode" class="form-control" placeholder="해당 계정 이메일로 발송">
+                    <button type="button" id="verifyBtn" class="btn btn-primary">인증확인</button>
+                </div>
+            </div>
+
+            <div id="resetPwArea" style="display:none;">
+                <hr>
+                <div class="mb-3">
+                    <label for="newPw" class="form-label">새 비밀번호</label>
+                    <input type="password" id="newPw" name="newPw" class="form-control" placeholder="8자 이상">
+                </div>
+                <div class="mb-3">
+                    <label for="newPwCheck" class="form-label">새 비밀번호 확인</label>
+                    <input type="password" id="newPwCheck" class="form-control" placeholder="다시 한 번 입력">
+                </div>
+                <button type="button" id="changePwBtn" class="btn btn-primary w-100">비밀번호 변경하기</button>
+            </div>
+
+            <div class="mt-2 text-center">
+                <span id="resultMsg" class="small fw-bold"></span>
+            </div>
+        </form>
+    </div>
+
+    <div class="text-center mt-3 small">
+        <a th:href="@{/user/login}" class="text-decoration-none text-secondary">로그인</a>
+        <span class="mx-2 text-muted">|</span>
+        <a th:href="@{/user/enroll}" class="text-decoration-none text-secondary">회원가입</a>
+        <span class="mx-2 text-muted">|</span>
+        <a th:href="@{/user/findId}" class="text-decoration-none text-secondary">아이디 찾기</a>
+    </div>
+
+</div>
+
+<script src="https://code.jquery.com/jquery.min.js"></script>
+<script type="text/javascript">
+$(function(){
+    // 1. 인증번호 발송 요청
+    $("#authBtn").click(function(){
+        let name = $("#name").val().trim();
+        let userId = $("#userId").val().trim();
+
+        if (name == "" || userId == "") {
+            $("#resultMsg").html("이름과 아이디를 모두 입력해주세요.").css("color", "red");
+            return;
+        }
+
+        $.post("/user/findPwAuth", {
+            name : name,
+            userId : userId
+        }, function(data) {
+            if (data == "SUCCESS") {
+                $("#resultMsg").html("인증번호가 발송되었습니다.").css("color", "blue");
+                $("#authCodeArea").show();
+                $("#authBtn").text("재발송");
+            } else {
+                $("#resultMsg").html("일치하는 회원 정보가 없습니다.").css("color", "red");
+            }
+        }).fail(function() {
+            $("#resultMsg").html("인증번호 발송에 실패했습니다.").css("color", "red");
+        });
+    });
+
+    // 2. 인증번호 확인
+    $("#verifyBtn").click(function(){
+        let name = $("#name").val().trim();
+        let userId = $("#userId").val().trim();
+        let authCode = $("#authCode").val().trim();
+
+        if (authCode == "") {
+            $("#resultMsg").html("인증번호를 입력해주세요.").css("color", "red");
+            return;
+        }
+
+        $.post("/user/verifyCode", {
+            name : name,
+            userId : userId,
+            authCode : authCode
+        }, function(data) {
+            if (data.status === "success") {
+                $("#resultMsg").html("인증에 성공했습니다. 새 비밀번호를 입력해주세요.").css("color", "green");
+                $("#name").attr("readonly", true);
+                $("#userId").attr("readonly", true);
+                $("#authCodeArea").hide();
+                $("#authBtn").hide();
+                $("#resetPwArea").show();
+            } else {
+                $("#resultMsg").html(data.message).css("color", "red");
+            }
+        }, "json").fail(function() {
+            $("#resultMsg").html("인증 확인 중 오류가 발생했습니다.").css("color", "red");
+        });
+    });
+
+    // 3. 비밀번호 변경
+    $("#changePwBtn").click(function(){
+        let userId = $("#userId").val().trim();
+        let newPw = $("#newPw").val().trim();
+        let newPwCheck = $("#newPwCheck").val().trim();
+
+        if(newPw == "" || newPwCheck == "") {
+            $("#resultMsg").html("비밀번호를 입력해주세요.").css("color", "red");
+            return;
+        }
+
+        if(newPw !== newPwCheck) {
+            $("#resultMsg").html("비밀번호가 서로 일치하지 않습니다.").css("color", "red");
+            return;
+        }
+
+        $.post("/user/resetPw", {
+            userId : userId,
+            newPw : newPw
+        }, function(data) {
+            if(data.status === "success") {
+                $("#resultMsg").html("비밀번호가 변경되었습니다.").css("color", "blue");
+                location.href = "/user/login";
+            } else {
+                $("#resultMsg").html("비밀번호 변경에 실패했습니다: " + data.message).css("color", "red");
+            }
+        }, "json").fail(function() {
+            $("#resultMsg").html("서버 통신 중 오류가 발생했습니다.").css("color", "red");
+        });
+    });
+});
+</script>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>

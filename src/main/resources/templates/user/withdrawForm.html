@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/common :: head('회원탈퇴')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<div class="container my-5" style="max-width: 480px;">
+
+    <a th:href="@{/}" class="d-block text-center mb-4 text-decoration-none">
+        <strong style="font-size: 28px;">Noexit</strong>
+    </a>
+
+    <div class="ne-sc">
+        <div class="ne-sc-title fs-5">회원탈퇴</div>
+
+        <p class="text-muted small mt-2 mb-3">
+            탈퇴를 진행하시려면 비밀번호를 입력해주세요.<br>
+            탈퇴 후에는 복구할 수 없습니다.
+        </p>
+
+        <form th:action="@{/user/withdraw}" method="post"
+              onsubmit="return confirm('정말 탈퇴하시겠습니까?');">
+
+            <div class="mb-3">
+                <label for="password" class="form-label">비밀번호</label>
+                <input type="password" id="password" name="password" class="form-control">
+                <!-- c:if + ${errorMessage} 두 줄을 th:if + th:text 한 줄로 -->
+                <div class="text-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100">회원탈퇴</button>
+        </form>
+    </div>
+
+</div>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>
