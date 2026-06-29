@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- 공통 head 내용(headInner) + 이 페이지 전용 CSS -->
+    <th:block th:replace="~{fragments/common :: headInner('테마 상세')}"></th:block>
+
+    <style type="text/css">
+
+    /* ── 페이지 레이아웃 ───────────────────────────── */
+    .container { display: flex; flex-direction: column; gap: 1.5rem; padding: 2rem 0; }
+
+    /* ── 테마 정보 (이미지 + 정보) ─────────────────── */
+    .theme-info-wrap { display: grid; grid-template-columns: 2fr 3fr; gap: 1.5rem; align-items: stretch; }
+    .theme-image { border-radius: var(--ne-radius); overflow: hidden; border: 1px solid var(--ne-border); background: linear-gradient(135deg, #f3f4f6, #e5e7eb); }
+    .theme-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .theme-info { display: flex; flex-direction: column; gap: .35rem; }
+    .theme-title { font-size: 1.4rem; font-weight: 800; margin: 0 0 .25rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+
+    .info-item { display: flex; justify-content: space-between; align-items: center; padding: .5rem .9rem; background: #ffffff; border: 1px solid var(--ne-border); border-radius: var(--ne-radius-sm); font-size: .9rem; }
+    .info-item > span:first-child { color: var(--ne-text-2); font-weight: 600; font-size: .84rem; }
+    .info-item > span:last-child { font-weight: 600; }
+    .info-item .ne-star { color: var(--ne-primary); letter-spacing: 1px; }
+
+    /* ── 테마 소개 ─────────────────────────────────── */
+    .theme-description p { margin: 0; padding: 1rem 1.25rem; background: var(--ne-primary-light); border: 1.5px solid var(--ne-primary-mid); border-radius: var(--ne-radius-md); font-size: .9rem; line-height: 1.7; color: #7a4f00; }
+
+    /* ── 예약 슬롯 ─────────────────────────────────── */
+    .slot { display: flex; align-items: flex-start; gap: 1.25rem; padding: .9rem 1.1rem; background: #ffffff; border: 1px solid var(--ne-border); border-radius: var(--ne-radius-md); margin-bottom: .6rem; }
+    .slot-date { font-weight: 800; font-size: .9rem; min-width: 95px; padding-top: .35rem; color: var(--ne-text); }
+    .slot-time { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .slot-time .slot-btn { padding: .45rem .9rem; border: 1.5px solid var(--ne-border-dark); border-radius: var(--ne-radius-sm); background: #ffffff; font-size: .84rem; font-weight: 600; color: var(--ne-text-2); cursor: pointer; transition: all .13s; line-height: 1.3; }
+    .slot-time .slot-btn:hover { border-color: var(--ne-primary); background: var(--ne-primary-light); color: var(--ne-primary-dark); }
+    .slot-time .slot-off { padding: .45rem .9rem; border: 1.5px solid var(--ne-border); border-radius: var(--ne-radius-sm); background: var(--ne-bg); font-size: .84rem; color: var(--ne-text-3); line-height: 1.3; cursor: not-allowed; }
+
+    /* ── 리뷰 ──────────────────────────────────────── */
+    .review-wrap { display: flex; flex-direction: column; gap: .75rem; }
+    .review-total { max-width: 360px; }
+    .review { display: flex; justify-content: space-between; align-items: center; font-size: .87rem; padding: .25rem 0; }
+    .review > span:first-child { color: var(--ne-text-2); }
+    .review .ne-star { color: var(--ne-primary); letter-spacing: 1px; }
+    .review-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; }
+    .review-list .ne-sc { margin-bottom: 0; }
+    .comment p { margin: .6rem 0 0; padding: .6rem .8rem; font-size: .84rem; line-height: 1.6; color: var(--ne-text-2); background: var(--ne-bg); border-radius: var(--ne-radius-sm); }
+
+    </style>
+
+    <script src="https://code.jquery.com/jquery.min.js"></script>
+
+    <script type="text/javascript">
+        // 슬롯 버튼 클릭 → 예약 작성 페이지로 이동.
+        // contextPath 가 루트('')라 plain 절대경로 사용. (@{} 는 th: 속성 안에서만 동작하므로 JS 에선 못 씀)
+        $(function() {
+            $(".slot-btn").click(function() {
+                window.location.href = "/party/write?slotId=" + this.getAttribute("data-slot");
+            });
+        });
+    </script>
+
+</head>
+<body>
+    <div th:replace="~{fragments/common :: header}"></div>
+
+    <main class="ne-main-content ne-body-offset">
+        <div class="ne-container">
+            <div class="container">
+
+                <!-- ① 테마 정보 -->
+                <div class="theme-info-wrap">
+
+                    <div class="theme-image">
+                        <!-- DB의 imagePath 가 이미 완전한 경로(/dist/images/...) → 그대로 출력만 -->
+                        <img th:src="@{${dto.imagePath}}" th:alt="${dto.themeName}">
+                    </div>
+
+                    <div class="theme-info">
+
+                        <h1 class="theme-title">
+                            <span th:text="${dto.themeName}">테마명</span>
+                            <span class="ne-tag ne-tag-sm ne-tag-primary" th:text="${dto.genre}">장르</span>
+                            <!-- c:if test="adult==1" → th:if -->
+                            <span class="ne-st ne-st-sm ne-st-red" th:if="${dto.adult == 1}">성인 전용</span>
+                        </h1>
+
+                        <div class="info-item"><span>카페명</span>   <span th:text="${dto.cafeName}"></span></div>
+                        <div class="info-item"><span>카페 위치</span><span th:text="${dto.cafeLocation}"></span></div>
+                        <div class="info-item"><span>전화번호</span> <span th:text="${dto.cafePhone}"></span></div>
+                        <div class="info-item"><span>테마 시간</span><span th:text="|${dto.duration}분|"></span></div>
+
+                        <!-- ★ 별점: 원본의 긴 SVG 반복 2덩어리 → stars 조각 한 줄로 -->
+                        <div class="info-item">
+                            <span>난이도</span>
+                            <th:block th:replace="~{fragments/common :: stars(${dto.difficulty})}"></th:block>
+                        </div>
+                        <div class="info-item">
+                            <span>공포도</span>
+                            <th:block th:replace="~{fragments/common :: stars(${dto.horror})}"></th:block>
+                        </div>
+                        <div class="info-item">
+                            <span>활동도</span>
+                            <th:block th:replace="~{fragments/common :: stars(${dto.activity})}"></th:block>
+                        </div>
+
+                        <!-- 가격: fmt:formatNumber pattern="#,###" → #numbers.formatInteger(값,최소자릿수,'COMMA') -->
+                        <div class="info-item">
+                            <span>가격</span>
+                            <span th:text="|${#numbers.formatInteger(dto.price, 1, 'COMMA')}원|"></span>
+                        </div>
+
+                        <div class="info-item">
+                            <span>인원</span>
+                            <span th:text="|${dto.minPlayers}명 ~ ${dto.maxPlayers}명|"></span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ② 테마 소개 -->
+                <div class="theme-description">
+                    <div class="ne-title">테마 소개</div>
+                    <p th:text="${dto.description}"></p>
+                </div>
+
+                <!-- ③ 예약 목록 (Map<날짜, List<시간>> 2단 순회) -->
+                <div class="slot-list">
+
+                    <div class="ne-title">예약 목록</div>
+
+                    <!-- 바깥: 날짜별. date.key=날짜, date.value=그 날 시간 List -->
+                    <div class="slot" th:each="date : ${slot}">
+
+                        <div class="slot-date" th:text="${date.key}">날짜</div>
+
+                        <div class="slot-time">
+                            <!-- 안쪽: 그 날의 시간들 -->
+                            <th:block th:each="time : ${date.value}">
+                                <!-- status==1(예약가능) → 버튼 / 아니면(이미 예약됨) → 비활성 span -->
+                                <button type="button" th:if="${time.status == 1}"
+                                        th:attr="data-slot=${time.slotId}" class="slot-btn"
+                                        th:text="${time.resTime}">시간</button>
+                                <span th:unless="${time.status == 1}" class="slot-off"
+                                      th:text="${time.resTime}">시간</span>
+                            </th:block>
+                        </div>
+
+                    </div>
+
+                    <!-- c:if empty slot → #maps.isEmpty -->
+                    <div class="ne-empty" th:if="${#maps.isEmpty(slot)}">
+                        <div class="ne-empty-title">예약 가능한 시간이 없습니다</div>
+                        <div class="ne-empty-desc">다른 날짜를 확인해 주세요.</div>
+                    </div>
+
+                </div>
+
+                <!-- ④ 리뷰 -->
+                <div class="review-wrap">
+
+                    <!-- 리뷰 통계: 리뷰가 있을 때만 -->
+                    <th:block th:if="${not #lists.isEmpty(review)}">
+                        <div class="ne-title">리뷰</div>
+
+                        <div class="review-total">
+                            <div class="ne-sc">
+                                <div class="ne-sc-title" th:text="|리뷰 통계 (${count}개)|">리뷰 통계</div>
+
+                                <div class="review">
+                                    <span>만족도</span>
+                                    <th:block th:replace="~{fragments/common :: stars(${total.satisfaction})}"></th:block>
+                                </div>
+                                <div class="review">
+                                    <span>체감난이도</span>
+                                    <th:block th:replace="~{fragments/common :: stars(${total.difficulty})}"></th:block>
+                                </div>
+                                <div class="review">
+                                    <span>체감공포도</span>
+                                    <th:block th:replace="~{fragments/common :: stars(${total.horror})}"></th:block>
+                                </div>
+                                <div class="review">
+                                    <span>체감활동도</span>
+                                    <th:block th:replace="~{fragments/common :: stars(${total.activity})}"></th:block>
+                                </div>
+                                <div class="review">
+                                    <span>몰입도</span>
+                                    <th:block th:replace="~{fragments/common :: stars(${total.immersion})}"></th:block>
+                                </div>
+                            </div>
+                        </div>
+                    </th:block>
+
+                    <!-- 리뷰 목록. 변수명 r 로 (테마 dto 와 겹치지 않게) -->
+                    <div class="review-list">
+
+                        <div class="ne-sc" th:each="r : ${review}">
+                            <div class="ne-sc-title" th:text="${r.nickName}">닉네임</div>
+
+                            <div class="review">
+                                <span>만족도</span>
+                                <th:block th:replace="~{fragments/common :: stars(${r.satisfaction})}"></th:block>
+                            </div>
+                            <div class="review">
+                                <span>체감난이도</span>
+                                <th:block th:replace="~{fragments/common :: stars(${r.difficulty})}"></th:block>
+                            </div>
+                            <div class="review">
+                                <span>체감공포도</span>
+                                <th:block th:replace="~{fragments/common :: stars(${r.horror})}"></th:block>
+                            </div>
+                            <div class="review">
+                                <span>체감활동도</span>
+                                <th:block th:replace="~{fragments/common :: stars(${r.activity})}"></th:block>
+                            </div>
+                            <div class="review">
+                                <span>몰입도</span>
+                                <th:block th:replace="~{fragments/common :: stars(${r.immersion})}"></th:block>
+                            </div>
+
+                            <div class="comment">
+                                <p th:text="${r.reviewComment}"></p>
+                            </div>
+                        </div>
+
+                        <!-- c:if empty review -->
+                        <div class="ne-empty" style="grid-column: 1 / -1;" th:if="${#lists.isEmpty(review)}">
+                            <div class="ne-empty-title">아직 작성된 리뷰가 없습니다</div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments/common :: footer}"></div>
+</body>
+</html>
