@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:replace="~{fragments/common :: headInner('NoExit')}"></th:block>
+    <link rel="stylesheet" th:href="@{/dist/css/main.css}">
+</head>
+
+<body style="background-color: #fff !important;" class="mainPage">
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<main class="ne-main-content">
+    <div class="slider">
+        <div class="sliderContent">
+            함께 즐길 파티원을 찾고 계신가요?<br>
+            NoExit에서 파티를 만들어 플레이하세요!<br>
+            <p>빠르고 쉽게 파티를 모으고, 원하는 테마를 바로 예약하세요!<br>
+               리뷰와 기록까지, 당신의 완벽한 방탈출 여정을 함께합니다.</p>
+            <button class="btn btn-primary">파티 매칭하러 가기</button>
+        </div>
+    </div>
+
+    <div class="ne-container ne-card mainWrap">
+
+        <!-- 인기 테마 -->
+        <div class="themeWrap">
+            <div class="title">인기 테마</div>
+            <div class="more">
+                <a th:href="@{/theme/list}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-arrow-right-circle" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5z"/>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="theme d-flex justify-content-around">
+                <div class="d-flex flex-column themeBox ne-card-hover ne-card"
+                     th:each="theme : ${themeList}"
+                     th:onclick="|location.href='/theme/info/${theme.roomId}'|">
+                    <img th:src="@{${theme.roomImg}}" alt=""/>
+                    <div class="badgeWrap">
+                        <span class="ne-tag ne-tag-dark ne-tag-sm" th:text="${theme.genreName}">장르</span>
+                        <span class="ne-tag ne-tag-red ne-tag-sm" th:if="${theme.isAdult == 1}">성인</span>
+                    </div>
+                    <div class="themeTitle">
+                        <span th:text="${theme.roomName}">테마명</span>
+                        <span class="sm" th:text="${theme.cafeName}">카페명</span>
+                    </div>
+                    <div class="review"><span>★ </span><span th:text="${theme.avgGrade}">0.0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 신규 파티 -->
+        <div class="partyWrap">
+            <div class="title">신규 파티</div>
+            <div class="more">
+                <a th:href="@{/party/list}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-arrow-right-circle" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5z"/>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="party d-flex justify-content-around">
+                <div class="d-flex flex-column partyBox ne-card ne-card-hover ne-card-top"
+                     th:each="party : ${partyList}"
+                     th:onclick="|location.href='/party/info/${party.partyId}'|">
+                    <div class="d-flex justify-content-between mb-2">
+                        <div class="subject" th:text="${party.partyName}">파티명</div>
+                        <div>
+                            <span class="ne-tag ne-tag-sm" style="width: 72px; text-align: center;"
+                                  th:classappend="${party.partyCnt >= party.maxPlayers ? 'ne-tag-red' : 'ne-tag-blue'}"
+                                  th:text="${party.partyCnt >= party.maxPlayers ? '모집 마감' : '모집중'}">모집중</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="name">
+                            <span th:text="${party.roomName}">방이름</span>
+                            <span class="sm" th:text="|${party.cafeName} · ${party.openAt}|">카페 · 시간</span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <div class="ne-tag ne-tag-green" th:text="|${party.avgTemp}℃|">0℃</div>
+                        <div class="detail"><span th:text="${party.partyCnt}">0</span> / <span th:text="${party.maxPlayers}">0</span>명</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>
