@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:replace="~{fragments/common :: headInner('카페 삭제')}"></th:block>
+</head>
+
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<div class="container my-5" style="max-width: 480px;">
+
+    <a th:href="@{/}" class="d-block text-center mb-4 text-decoration-none">
+        <strong style="font-size: 28px;">Noexit</strong>
+    </a>
+
+    <div class="ne-sc">
+        <div class="ne-sc-title fs-5">카페 삭제</div>
+
+        <p class="text-muted small mt-2 mb-3">
+            삭제할 카페와 사유를 선택해주세요.<br>
+            삭제 후에는 복구할 수 없습니다.
+        </p>
+
+        <form th:action="@{/mypage/cafe/drop}" method="post"
+              onsubmit="return confirm('정말 이 카페를 삭제하시겠습니까?');">
+
+            <div class="mb-3">
+                <label for="cafeId" class="form-label">삭제할 카페</label>
+                <select id="cafeId" name="cafeId" class="form-select" required>
+                    <option value="">-- 카페 선택 --</option>
+                    <option th:each="cafe : ${cafeList}"
+                            th:value="${cafe.cafeId}"
+                            th:text="${cafe.cafeName}">카페명</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="dropReasonId" class="form-label">삭제 사유</label>
+                <select id="dropReasonId" name="dropReasonId" class="form-select" required>
+                    <option value="">-- 사유 선택 --</option>
+                    <option th:each="reason : ${reasonList}"
+                            th:value="${reason.dropReasonId}"
+                            th:text="${reason.dropReasonName}">사유</option>
+                </select>
+                <div class="text-danger" th:if="${errorMessage != null}" th:text="${errorMessage}"></div>
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100">카페 삭제</button>
+        </form>
+    </div>
+
+</div>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>
