@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.noexit.app.common.PartyException;
 import com.noexit.app.mapper.PartyMapper;
 import com.noexit.app.model.Cafe;
 import com.noexit.app.model.MyPartyDTO;
@@ -27,7 +28,11 @@ import lombok.extern.slf4j.Slf4j;
 public class PartyServiceImpl implements PartyService
 {
 	private final PartyMapper mapper;
-	
+
+	private static final int ADULT_MIN_AGE = 19;
+	private static final int PARTY_NAME_MAX = 20;
+	private static final int PARTY_COMMENT_MAX = 30;
+
 	@Override
 	public List<PartyDTO> getPartyList(Map<String, Object> map,SearchFilterDTO filter)
 	{
@@ -125,18 +130,21 @@ public class PartyServiceImpl implements PartyService
 	@Override
 	public int partyInsert(PartyDTO dto)
 	{
-		int result = 0;
-		
-		try
-		{
-			result = mapper.partyInsert(dto);
-		}
-		catch (Exception e)
-		{
-			log.info("partyInsert : ",e);
-		}
-		
-		return result;
+		// 슬롯 유효성
+		ThemeSlotDTO slot = mapper.getThemeSlotById(dto.getSlotId());
+		if (slot == null || slot.getStatus() != 1)
+			throw new PartyException("유효하지 않은 슬롯입니다.");
+
+		// 성인 테마 나이 제한
+		if (slot.getAdult() > 0 && getUserAge(dto.getUserId()) < ADULT_MIN_AGE)
+			throw new PartyException("미성년자는 성인 테마 개설이 불가합니다.");
+
+		// 길이 제한
+		if (dto.getPartyComment().length() >= PARTY_COMMENT_MAX
+				|| dto.getPartyName().length() >= PARTY_NAME_MAX)
+			throw new PartyException("파티 제약 조건을 위반했습니다.");
+
+		return mapper.partyInsert(dto);
 	}
 
 	@Override

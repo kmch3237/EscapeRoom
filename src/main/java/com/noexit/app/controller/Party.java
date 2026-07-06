@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.noexit.app.common.PartyException;
 import com.noexit.app.model.Cafe;
 import com.noexit.app.model.PartyApplyDTO;
 import com.noexit.app.model.PartyCommentDTO;
@@ -318,56 +319,35 @@ public class Party
 		 * 가져올 데이터 없음
 		 */
 
+		User user = (User) session.getAttribute("loginUser");
+
+		// 로그인 체크
+		if(user == null)
+		{
+			reModel.addAttribute("errorMsg", "로그인 후 이용 가능합니다");
+			return "redirect:/err/login";
+		}
+
 		try
 		{
-			User user = (User) session.getAttribute("loginUser");
-			
-			// 로그인 체크
-			if(user == null)
-			{
-				reModel.addAttribute("errorMsg", "로그인 후 이용 가능합니다");
-				return "err/login";
-			}
-			
-			ThemeSlotDTO slot = service.getThemeSlotById(dto.getSlotId());
-			
-			// 슬롯 유효성 체크
-			if (slot == null || slot.getStatus() != 1)
-			{
-				reModel.addAttribute("errorMsg", "유효하지 않은 슬롯입니다.");
-				return "redirect:/err/error";
-			}
-			
-			if(slot.getAdult() > 0)
-			{
-				if(service.getUserAge(user.getUserId()) < 19)
-				{
-					reModel.addAttribute("errorMsg", "미성년자는 성인 테마 개설이 불가합니다.");
-					return "redirect:/err/error";
-				}
-			}
-			
 			// 파티장으로 설정
 			dto.setUserId(user.getUserId());
 
-			// 길이 체크
-			if (dto.getPartyComment().length() >= 30 || dto.getPartyName().length() >= 20)
-			{
-				reModel.addAttribute("errorMsg", "파티 제약 조건을 위반했습니다.");
-				return "redirect:/err/error";
-			}
-			
 			service.partyInsert(dto);
-			
+
 			return "redirect:/party/board/" + dto.getPartyId();
-		} 
+		}
+		catch (PartyException e)
+		{
+			reModel.addAttribute("errorMsg", e.getMessage());
+			return "redirect:/err/error";
+		}
 		catch (Exception e)
 		{
 			log.info("partyInsert : ", e);
+			reModel.addAttribute("errorMsg", "서버 오류로 파티 개설에 실패했습니다. 잠시후 다시 시도해 주세요.");
+			return "redirect:/err/error";
 		}
-
-		reModel.addAttribute("errorMsg", "서버 오류로 파티 개설에 실패했습니다. 잠시후 다시 시도해 주세요.");
-		return "redirect:/err/error";
 	}
 
 	/*
