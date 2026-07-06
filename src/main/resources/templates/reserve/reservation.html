@@ -1,12 +1,19 @@
 <!DOCTYPE html>
+<!-- reservation.jsp -> Thymeleaf. 컨트롤러 reserveForm 이 model "bookerInfo" 를 넘김 -->
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 
+<!--
+  head: 공통 headInner(제목) 재사용 + 이 페이지 전용 CSS/스크립트 추가
+  (페이지 전용 CSS 가 있어서 head 통째교체 대신 headInner 만 끼움)
+-->
 <head>
     <th:block th:replace="~{fragments/common :: headInner('No Exit - 예약')}"></th:block>
     <link rel="stylesheet" th:href="@{/dist/css/reservation.css}">
 
     <script src="https://code.jquery.com/jquery.min.js"></script>
     <script>
+        // 예약 확정 버튼 클릭 -> AJAX POST -> JSON 응답(res.success / res.message)
+        // ★ JS 안에서는 @{} 안 먹으므로 URL 은 절대경로로 직접 작성
         $(function () {
             $("#resBtn").on("click", function () {
                 const partyId = $(this).data("party-id");
@@ -33,33 +40,42 @@
 
 <body>
 
+<!-- 공통 헤더 조각 -->
 <div th:replace="~{fragments/common :: header}"></div>
 
 <main class="ne-main-content ne-body-offset">
     <div class="ne-container d-flex justify-content-between">
 
+        <!-- ───────── 왼쪽 col-md-8 (1~7번: 정답 예시) ───────── -->
         <div class="col-md-8 ne-wrap">
 
+            <!-- 테마 정보 -->
             <div class="themeWrap content-box-yellow mb-2 d-flex align-items-center">
                 <div class="icon">🔐</div>
                 <div class="themeInfo">
+                    <!-- (1) th:text 는 <p> 태그 "안에" 붙는 속성. 안쪽 글자를 값으로 교체 -->
                     <p class="cafeName" th:text="${bookerInfo.cafeName}">카페명</p>
+                    <!-- (2) -->
                     <p class="themeName" th:text="${bookerInfo.roomName}">테마명</p>
+                    <!-- (3) ${} 로 감싸야 값으로 꺼내짐 -->
                     <p class="reservDate" th:text="${bookerInfo.openAt}">예약날짜</p>
                 </div>
             </div>
 
+            <!-- 예약자 정보 -->
             <div class="reservWrap content-box mb-2">
                 <div class="ne-title">예약자 정보</div>
                 <form name="reservForm" method="post">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
                             <label for="name" class="label">이름</label><br>
+                            <!-- (4) input 의 값은 th:value (th:text 아님). <input> 태그 안에 속성으로 -->
                             <input type="text" id="name" name="name" class="ne-box" readonly="readonly"
                                    th:value="${bookerInfo.bookerName}"/>
                         </div>
                         <div>
                             <label for="phone" class="label">연락처</label><br>
+                            <!-- (5) -->
                             <input type="tel" id="phone" name="phone" class="ne-box" readonly="readonly"
                                    th:value="${bookerInfo.bookerTel}"/>
                         </div>
@@ -67,6 +83,7 @@
                     <div class="mb-2">
                         <p class="label">총 방문 인원</p>
                         <div class="d-flex justify-content-between align-items-center mt-1" style="width: 20%;">
+                            <!-- (6) -->
                             <span class="personCount" th:text="${bookerInfo.totalMember}">0</span>
                             <span style="font-size: 14px; color: #666;">명</span>
                         </div>
@@ -74,6 +91,7 @@
                 </form>
             </div>
 
+            <!-- 예약 안내사항 (정적 텍스트) -->
             <div class="content-box reservInfo mb-3">
                 <div class="ne-title">예약 안내사항</div>
                 <ul>
@@ -83,44 +101,53 @@
                 </ul>
             </div>
 
+            <!-- 예약 확정 버튼 -->
             <div class="btnWrap">
+                <!-- (7) data-party-id 는 전용 단축키가 없는 커스텀 속성 -> 만능 th:attr -->
                 <button type="button" class="btn btn-primary" id="resBtn"
                         th:attr="data-party-id=${bookerInfo.partyId}">예약 확정하기</button>
             </div>
         </div>
 
+        <!-- ───────── 오른쪽 col-md-3 (8~13번: 네가 채울 차례) ───────── -->
         <div class="col-md-3 ne-wrap">
             <div class="payWrap content-box-yellow">
                 <div class="ne-title mb-4">예약 정보</div>
 
                 <div class="text-center mb-3">
+                    <!-- (8) ROOM_IMG 가 이미 /dist/images/... 전체경로라 그대로 출력. @{} 가 컨텍스트경로만 앞에 붙임 -->
                     <img src="" alt="테마이미지" style="height: 250px;"
                          th:src="@{${bookerInfo.roomImg}}"/>
                 </div>
 
                 <div class="d-flex justify-content-between mb-2">
                     예약 테마명
+                    <!-- (9) -->
                     <span th:text="${bookerInfo.roomName}">테마명</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                     예약 날짜
+                    <!-- (10) -->
                     <span th:text="${bookerInfo.openAt}">날짜</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                     1인 기준가
                     <span>
+                        <!-- (11) 천단위 콤마 -->
                         <span th:text="${#numbers.formatInteger(bookerInfo.price, 1, 'COMMA')}">0</span>
                         원
                     </span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                     총 인원
+                    <!-- (12) 값 뒤에 '명' 붙이기 -> |...| 리터럴 치환 -->
                     <span th:text="|${bookerInfo.totalMember}명|">0명</span>
                 </div>
                 <div class="line"></div>
                 <div class="d-flex justify-content-between total">
                     합계(현장결제)
                     <span>
+                        <!-- (13) 합계 = 1인가 × 인원, 콤마 -->
                         <span th:text="${#numbers.formatInteger(bookerInfo.price * bookerInfo.totalMember, 1, 'COMMA')}">0</span>
                         원
                     </span>
@@ -131,6 +158,7 @@
     </div>
 </main>
 
+<!-- 공통 푸터 조각 -->
 <div th:replace="~{fragments/common :: footer}"></div>
 
 </body>

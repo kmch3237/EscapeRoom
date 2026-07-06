@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<th:block th:replace="~{fragments/common :: headInner(${mode == 'write' ? '파티 개설' : '파티 수정'})}"></th:block>
+
+<style type="text/css">
+
+/* ── 레이아웃 ──────────────────────────────────── */
+.container {
+	width: 520px;
+	margin: 2.5rem auto;
+}
+
+/* ── 테마 정보 박스 ────────────────────────────── */
+.theme-info-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: .4rem;
+	margin-bottom: 1.25rem;
+}
+.theme-info-wrap .info-row {
+	display: flex;
+	justify-content: space-between;
+	font-size: .88rem;
+}
+.theme-info-wrap .info-row > span:first-child {
+	color: var(--ne-text-2);
+	font-weight: 600;
+}
+.theme-info-wrap .info-row > span:last-child {
+	font-weight: 600;
+}
+
+/* ── 작성 폼 ───────────────────────────────────── */
+.write-wrap form {
+	display: flex;
+	flex-direction: column;
+	gap: .35rem;
+}
+.write-wrap .form-label {
+	margin-top: .5rem;
+	margin-bottom: 0;
+}
+.write-wrap .gender-check {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	margin: .6rem 0;
+	font-size: .9rem;
+	cursor: pointer;
+}
+.write-wrap .gender-check input {
+	width: 1.15em;
+	height: 1.15em;
+	accent-color: var(--ne-primary);
+	cursor: pointer;
+}
+
+/* ── 버튼 ──────────────────────────────────────── */
+.write-btn {
+	display: flex;
+	justify-content: center;
+	gap: .5rem;
+	margin-top: 1.5rem;
+}
+.write-btn .btn { min-width: 120px; }
+
+</style>
+
+<script type="text/javascript" th:inline="javascript">
+
+	function partyWrite()
+	{
+		const f = document.writeForm;
+
+		let str = f.partyName.value.trim();
+
+		if(!str)
+		{
+			alert("파티명을 입력해야 합니다.");
+			f.partyName.focus();
+			return;
+		}
+
+		str = f.partyComment.value.trim();
+
+		if(!str)
+		{
+			alert("코멘트를 입력해야합니다.");
+			f.partyComment.focus();
+			return;
+		}
+
+		f.submit();
+	}
+
+	function cancel()
+	{
+		let mode = /*[[${mode}]]*/ 'write';
+
+		if(mode == 'write')
+		{
+			window.location.href = /*[[@{/theme/info/{id}(id=${dto.themeId})}]]*/ '/theme/info/0';
+		}
+	}
+
+</script>
+
+</head>
+<body>
+	<div th:replace="~{fragments/common :: header}"></div>
+
+	<main class="ne-main-content ne-body-offset">
+		<div class="ne-container">
+			<div class="container">
+
+				<div class="ne-sc">
+
+					<div class="ne-sc-title" th:text="${mode == 'write'} ? '파티 개설' : '파티 수정'">파티 개설</div>
+
+					<!-- 테마 정보 -->
+					<div class="theme-info-wrap content-box-yellow">
+						<div class="info-row"><span>카페명</span><span th:text="${dto.cafeName}"></span></div>
+						<div class="info-row"><span>테마명</span><span th:text="${dto.themeName}"></span></div>
+						<div class="info-row"><span>날짜</span><span th:text="${dto.resDate}"></span></div>
+						<div class="info-row"><span>시간</span><span th:text="${dto.resTime}"></span></div>
+						<div class="info-row"><span>인원수</span><span th:text="|${dto.minPlayers}명 ~ ${dto.maxPlayers}명|"></span></div>
+						<div class="info-row"><span>가격</span><span th:text="|${#numbers.formatInteger(dto.price, 0, 'COMMA')}원|"></span></div>
+					</div>
+
+					<!-- 작성 폼 -->
+					<div class="write-wrap">
+						<form th:action="@{/party/write}" class="write-form" method="post" name="writeForm">
+
+							<label class="form-label">파티명 <span class="form-required">*</span></label>
+							<input type="text" class="form-control" name="partyName" value="" maxlength="20" placeholder="파티명을 입력하세요">
+
+							<label class="gender-check">
+								<input type="checkbox" name="genderId" value="1">
+								동성만 모집
+							</label>
+
+							<label class="form-label">코멘트 <span class="form-required">*</span></label>
+							<input type="text" class="form-control" value="" name="partyComment" maxlength="30" placeholder="파티원에게 전할 내용을 입력하세요">
+
+							<input type="hidden" th:value="${dto.slotId}" name="slotId">
+						</form>
+					</div>
+
+					<!-- 버튼 -->
+					<div class="write-btn">
+						<button type="button" class="btn btn-primary" onclick="partyWrite()" th:text="${mode == 'write'} ? '파티 개설' : '파티 수정'">파티 개설</button>
+						<button type="button" class="btn btn-outline-primary" onclick="cancel()">취소하기</button>
+					</div>
+
+				</div>
+
+			</div>
+		</div>
+	</main>
+
+	<div th:replace="~{fragments/common :: footer}"></div>
+</body>
+</html>
