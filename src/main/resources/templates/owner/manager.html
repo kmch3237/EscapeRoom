@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- manager.jsp -> Thymeleaf. 사장 매니저 목록 + 비활성화 -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/common :: headInner('NoExit - 매니저관리')}"></th:block>
+    <link rel="stylesheet" th:href="@{/dist/css/manager.css}">
+    <script>
+        // 비활성화 확인 후 해당 폼 submit
+        function deactOk(formId) {
+            if (confirm('정말 비활성화 하시겠습니까?')) {
+                document.getElementById(formId).submit();
+            }
+        }
+    </script>
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<main class="ne-main-content ne-body-offset">
+    <div class="ne-container d-flex">
+        <aside class="col-md-2">
+            <div th:replace="~{fragments/sidebar :: ownerSide}"></div>
+        </aside>
+        <div class="col-md-10 resWrap">
+            <div class="title">매니저 관리</div>
+            <div class="d-flex justify-content-between">
+                <div class="resList" style="width:100%">
+
+                    <div class="inputBox d-flex justify-content-end">
+                        <a th:href="@{/owner/manager/enroll}" class="btn btn-outline-dark">매니저 등록</a>
+                    </div>
+
+                    <div class="manager-list">
+
+                        <div class="row fw-bold border-bottom py-2 m-0">
+                            <div class="col-1">번호</div>
+                            <div class="col-2">이름</div>
+                            <div class="col-2">담당 카페</div>
+                            <div class="col-2">연락처</div>
+                            <div class="col-2">입사일</div>
+                            <div class="col-1">상태</div>
+                            <div class="col-2"></div>
+                        </div>
+
+                        <!-- c:forEach + varStatus -> th:each 의 두번째 변수(st)로 순번(st.count) -->
+                        <div th:each="m, st : ${managerList}" class="row align-items-center border-bottom py-2 m-0">
+                            <div class="col-1" th:text="${st.count}">1</div>
+                            <div class="col-2" th:text="${m.name}">이름</div>
+                            <div class="col-2" th:text="${m.cafeName}">카페</div>
+                            <div class="col-2" th:text="${m.phone}">연락처</div>
+                            <!-- fmt:formatDate -> #dates.format -->
+                            <div class="col-2" th:text="${#dates.format(m.createdAt, 'yyyy-MM-dd')}">2026-01-01</div>
+                            <div class="col-1"><span class="status-active">활성</span></div>
+                            <div class="col-2">
+                                <form th:id="|deactForm-${m.managerHistoryId}|"
+                                      th:action="@{/owner/manager/deact}" method="post" style="display:inline">
+                                    <input type="hidden" name="cafeId" th:value="${m.cafeId}">
+                                    <input type="hidden" name="userId" th:value="${m.userId}">
+                                    <button type="button" class="btn btn-sm ne-btn-deact"
+                                            th:onclick="|deactOk('deactForm-${m.managerHistoryId}')|">비활성화</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- c:if empty -> th:if -->
+                        <div th:if="${#lists.isEmpty(managerList)}" class="text-center py-3">등록된 매니저가 없습니다.</div>
+                    </div>
+
+                    <!-- ${paging}(자바 조립 HTML)은 th:text면 이스케이프됨 -> th:utext 로 HTML 그대로 -->
+                    <div th:if="${dataCount != 0}" th:utext="${paging}"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>

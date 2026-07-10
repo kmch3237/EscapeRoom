@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!-- attendance.jsp -> Thymeleaf. 사장 출석 체크 현황 목록 -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/common :: headInner('출석체크')}"></th:block>
+    <link rel="stylesheet" th:href="@{/dist/css/attendance.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<div class="ne-main-content ne-body-offset">
+    <div class="ne-container d-flex">
+        <aside class="col-md-2">
+            <div th:replace="~{fragments/sidebar :: ownerSide}"></div>
+        </aside>
+        <div class="col-md-10 resWrap">
+            <div class="title">출석 체크 현황</div>
+            <div class="d-flex justify-content-between">
+                <div class="resList" style="width:100%">
+
+                    <div class="inputBox d-flex justify-content-end">
+                        <a th:href="@{/owner/attendance/history}" class="btn btn-outline-dark">출석기록</a>
+                    </div>
+
+                    <div class="attend-list">
+
+                        <div class="row fw-bold border-bottom py-2 m-0">
+                            <div class="col-1">시간</div>
+                            <div class="col-2">카페</div>
+                            <div class="col-2">테마</div>
+                            <div class="col-2">예약자</div>
+                            <div class="col-1">인원</div>
+                            <div class="col-2">상태</div>
+                            <div class="col-2"></div>
+                        </div>
+
+                        <div th:each="r : ${attendList}" class="row align-items-center border-bottom py-2 m-0 text-muted">
+                            <div class="col-1 fw-bold">
+                                <span th:text="${#dates.format(r.openAt, 'MM-dd')}">01-01</span><br>
+                                <span th:text="${#dates.format(r.openAt, 'HH:mm')}">00:00</span>
+                            </div>
+                            <div class="col-2" th:text="${r.cafeName}">카페</div>
+                            <div class="col-2" th:text="${r.roomName}">테마</div>
+                            <div class="col-2" th:text="${r.leaderNickname}">예약자</div>
+                            <div class="col-1"><span th:text="${r.totalMember}">0</span>명</div>
+
+                            <!-- c:choose(5갈래) -> 배타적 th:if 블록들 -->
+
+                            <!-- ① 출석 완료 -->
+                            <th:block th:if="${r.statusName == '출석 완료'}">
+                                <div class="col-2"><span class="status-done">출석처리 완료</span></div>
+                                <div class="col-2">-</div>
+                            </th:block>
+
+                            <!-- ② 노쇼 -->
+                            <th:block th:if="${r.statusName == '노쇼'}">
+                                <div class="col-2"><span class="status-noshow">노쇼</span></div>
+                                <div class="col-2">-</div>
+                            </th:block>
+
+                            <!-- ③ 그 외(미처리): doneList/partialList 로 세분 -->
+                            <th:block th:if="${r.statusName != '출석 완료' and r.statusName != '노쇼'}">
+
+                                <!-- 입력 완료 -->
+                                <th:block th:if="${doneList.contains(r.reservationId)}">
+                                    <div class="col-2"><span class="status-done">입력 완료</span></div>
+                                    <div class="col-2">
+                                        <a class="btn btn-sm btn-outline-secondary"
+                                           th:href="@{/owner/attendance/check(reservationId=${r.reservationId})}">다시 입력</a>
+                                    </div>
+                                </th:block>
+
+                                <!-- 출석 미완료 -->
+                                <th:block th:if="${!doneList.contains(r.reservationId) and partialList.contains(r.reservationId)}">
+                                    <div class="col-2"><span class="status-wait">출석 미완료</span></div>
+                                    <div class="col-2">
+                                        <a class="btn btn-sm btn-outline-warning"
+                                           th:href="@{/owner/attendance/check(reservationId=${r.reservationId})}">이어서 입력</a>
+                                    </div>
+                                </th:block>
+
+                                <!-- 대기 -->
+                                <th:block th:if="${!doneList.contains(r.reservationId) and !partialList.contains(r.reservationId)}">
+                                    <div class="col-2"><span class="status-wait">대기</span></div>
+                                    <div class="col-2">
+                                        <a class="btn btn-primary"
+                                           th:href="@{/owner/attendance/check(reservationId=${r.reservationId})}">출석체크확인</a>
+                                    </div>
+                                </th:block>
+
+                            </th:block>
+                        </div>
+
+                        <div th:if="${#lists.isEmpty(attendList)}" class="text-center py-3">조회된 예약이 없습니다.</div>
+                    </div>
+
+                    <!-- 입력한 게 있으면 최종 확인 버튼 -->
+                    <form th:if="${not #lists.isEmpty(doneList)}"
+                          th:action="@{/owner/attendance/finalize}" method="post" class="text-end mt-3">
+                        <button type="submit" class="btn btn-primary"
+                                onclick="return confirm('입력한 출석 내용을 최종 저장하시겠습니까?');">
+                            최종 확인 (<span th:text="${doneList.size()}">0</span>건)
+                        </button>
+                    </form>
+
+                    <!-- 페이징 (자바 조립 HTML -> th:utext) -->
+                    <div th:if="${dataCount != 0}" th:utext="${paging}"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>

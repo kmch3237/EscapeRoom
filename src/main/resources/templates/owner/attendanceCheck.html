@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<!-- attendanceCheck.jsp -> Thymeleaf. 예약 1건의 크루별 출석 입력(임시저장) -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/common :: headInner('NoExit - 출석체크 확인')}"></th:block>
+    <link rel="stylesheet" th:href="@{/dist/css/attendance.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<main class="ne-main-content ne-body-offset">
+    <div class="ne-container d-flex">
+        <div th:replace="~{fragments/sidebar :: ownerSide}"></div>
+        <div class="col-md-10 resWrap">
+            <div class="title">출석 체크</div>
+            <div class="d-flex justify-content-between">
+                <div class="resList" style="width:100%">
+                    <form th:action="@{/owner/attendance/saveDraft}" method="post">
+                        <input type="hidden" name="reservationId" th:value="${reservationId}">
+
+                        <div class="attend-list">
+
+                            <div class="row fw-bold border-bottom py-2 m-0">
+                                <div class="col-4">닉네임</div>
+                                <div class="col-3">역할</div>
+                                <div class="col-5">출석 여부</div>
+                            </div>
+
+                            <div th:each="c : ${crewList}" class="row align-items-center border-bottom py-2 m-0">
+                                <div class="col-4" th:text="${c.nickname}">닉네임</div>
+                                <!-- c:choose HOST -> 삼항 -->
+                                <div class="col-3" th:text="${c.position == 'HOST' ? '파티장' : '파티원'}">역할</div>
+                                <div class="col-5">
+                                    <input type="hidden" name="userIds" th:value="${c.userId}">
+                                    <!-- ${..?'selected':''} -> th:selected 로 기존 선택값 유지 -->
+                                    <select name="attendStatusIds" class="form-select">
+                                        <option value=""  th:selected="${c.attendStatusId == null}">미정</option>
+                                        <option value="1" th:selected="${c.attendStatusId == 1}">출석</option>
+                                        <option value="2" th:selected="${c.attendStatusId == 2}">노쇼</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div th:if="${#lists.isEmpty(crewList)}" class="text-center py-3">파티원이 없습니다.</div>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <button type="submit" class="btn btn-primary"
+                                    onclick="return confirm('이대로 저장하시겠습니까?');">확인</button>
+                            <a class="btn btn-outline-secondary" th:href="@{/owner/attendance}">취소</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>
