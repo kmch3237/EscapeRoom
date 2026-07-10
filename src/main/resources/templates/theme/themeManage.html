@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<!-- themeManage.jsp -> Thymeleaf. 사장 테마 목록 + 수정/삭제 모달 -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/common :: headInner('NoExit - 테마 관리')}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<main class="ne-main-content ne-body-offset">
+    <div class="ne-container d-flex">
+        <aside class="col-md-2">
+            <div th:replace="~{fragments/sidebar :: ownerSide}"></div>
+        </aside>
+        <div class="col-md-10 resWrap">
+            <div class="title">테마 관리</div>
+            <div class="d-flex justify-content-between">
+                <div class="resList" style="width:100%">
+
+                    <div class="inputBox d-flex justify-content-end">
+                        <!-- ?mode=write : @{} 에서 쿼리파라미터는 (name=value) -->
+                        <a th:href="@{/owner/theme/write(mode='write')}" class="btn btn-outline-dark">테마 등록</a>
+                    </div>
+
+                    <div class="theme-list">
+
+                        <div class="row fw-bold border-bottom py-2 m-0">
+                            <div class="col-1">번호</div>
+                            <div class="col-2">카페</div>
+                            <div class="col-3">테마명</div>
+                            <div class="col-2">장르</div>
+                            <div class="col-2">가격</div>
+                            <div class="col-2"></div>
+                        </div>
+
+                        <div th:each="t, st : ${themeList}" class="row align-items-center border-bottom py-2 m-0">
+                            <div class="col-1" th:text="${st.count}">1</div>
+                            <div class="col-2" th:text="${t.cafeName}">카페</div>
+                            <div class="col-3" th:text="${t.themeName}">테마명</div>
+                            <div class="col-2" th:text="${t.genre}">장르</div>
+                            <!-- fmt:formatNumber #,### -> #numbers.formatInteger COMMA -->
+                            <div class="col-2"><span th:text="${#numbers.formatInteger(t.price, 1, 'COMMA')}">0</span>원</div>
+                            <div class="col-2">
+                                <a th:href="@{/owner/theme/write(mode='update', roomId=${t.themeId})}" class="btn btn-sm btn-primary">수정</a>
+                                <button type="button" class="btn btn-sm btn-danger"
+                                        th:onclick="|openDropModal(${t.themeId}, '${t.themeName}')|">삭제</button>
+                            </div>
+                        </div>
+
+                        <div th:if="${#lists.isEmpty(themeList)}" class="text-center py-3">등록된 테마가 없습니다.</div>
+                    </div>
+
+                    <div th:if="${dataCount != 0}" th:utext="${paging}"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 테마 삭제 모달 -->
+<div class="modal fade" id="themeDropModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">테마 삭제</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="themeDropForm" th:action="@{/owner/theme/drop}" method="post">
+                <div class="modal-body">
+                    <p>
+                        <strong id="dropThemeName"></strong> 테마를 삭제하시겠습니까?<br>
+                        <span class="text-muted small">삭제 후에는 복구할 수 없습니다.</span>
+                    </p>
+                    <input type="hidden" name="themeId" id="dropThemeId">
+                    <div class="mb-2">
+                        <label for="dropReasonId" class="form-label">삭제 사유</label>
+                        <select id="dropReasonId" name="dropReasonId" class="form-select" required>
+                            <option value="">-- 사유 선택 --</option>
+                            <option th:each="r : ${reasonList}" th:value="${r.dropReasonId}" th:text="${r.dropReasonName}">사유</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 삭제 모달 열기 (선택 테마 id/이름 채움)
+    function openDropModal(themeId, themeName) {
+        document.getElementById('dropThemeId').value = themeId;
+        document.getElementById('dropThemeName').innerText = themeName;
+        document.getElementById('dropReasonId').value = '';
+        new bootstrap.Modal(document.getElementById('themeDropModal')).show();
+    }
+</script>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>

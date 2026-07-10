@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<!-- themeWriteForm.jsp -> Thymeleaf. 테마 등록/수정 폼 (mode 로 분기) -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- 제목: 삼항으로 등록/수정 -->
+    <th:block th:replace="~{fragments/common :: headInner(${mode == 'update' ? '테마 수정' : '테마 등록'})}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<div class="container my-5" style="max-width: 720px;">
+
+    <div class="ne-sc">
+        <div class="ne-sc-title fs-5">
+            테마 <span th:text="${mode == 'update' ? '수정' : '등록 신청'}">등록 신청</span>
+        </div>
+
+        <form th:action="@{/owner/theme/write}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="mode" th:value="${mode}">
+            <!-- 수정일 때만 themeId hidden -->
+            <input th:if="${mode == 'update'}" type="hidden" name="themeId" th:value="${dto.themeId}">
+
+            <div class="row mb-3">
+                <div class="col-8">
+                    <label for="themeName" class="form-label">테마명<span class="form-required">*</span></label>
+                    <input type="text" id="themeName" name="themeName" class="form-control" maxlength="100"
+                           th:value="${dto?.themeName}" placeholder="테마명을 입력해주세요" required>
+                </div>
+                <div class="col-4">
+                    <label for="cafeId" class="form-label">카페<span class="form-required">*</span></label>
+                    <select id="cafeId" name="cafeId" class="form-select" required>
+                        <option value="">-- 카페 선택 --</option>
+                        <option th:each="cafe : ${cafeList}" th:value="${cafe.cafeId}"
+                                th:selected="${dto != null and dto.cafeId == cafe.cafeId}"
+                                th:text="${cafe.cafeName}">카페명</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <label for="genre" class="form-label">장르<span class="form-required">*</span></label>
+                    <select id="genre" name="genre" class="form-select" required>
+                        <option value="">-- 장르 선택 --</option>
+                        <option th:each="genre : ${genreList}" th:value="${genre.genreId}"
+                                th:selected="${dto != null and dto.genre == genre.genreId}"
+                                th:text="${genre.genreName}">장르</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label for="adult" class="form-label">성인 전용 여부<span class="form-required">*</span></label>
+                    <select id="adult" name="adult" class="form-select" required>
+                        <option th:each="c : ${commonList}" th:value="${c.commonId}"
+                                th:selected="${dto != null and dto.adult == c.commonId}"
+                                th:text="${c.commonName == 'N' ? '일반 (전체 이용가)' : (c.commonName == 'Y' ? '성인 전용 테마' : '')}">구분</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <label for="duration" class="form-label">소요시간(분)<span class="form-required">*</span></label>
+                    <input type="number" id="duration" name="duration" class="form-control" th:value="${dto?.duration}" placeholder="예: 60" required>
+                    <div class="ne-hint">분 단위 숫자로만 입력</div>
+                </div>
+                <div class="col">
+                    <label for="price" class="form-label">가격(1인 기준)<span class="form-required">*</span></label>
+                    <input type="number" id="price" name="price" class="form-control" min="0" max="999999" th:value="${dto?.price}" required>
+                    <div class="ne-hint">원 단위 숫자로만 입력</div>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <label for="minPlayers" class="form-label">최소 인원수<span class="form-required">*</span></label>
+                    <input type="number" id="minPlayers" name="minPlayers" class="form-control" min="1" max="99" th:value="${dto?.minPlayers}" placeholder="최소 인원" required>
+                </div>
+                <div class="col">
+                    <label for="maxPlayers" class="form-label">최대 인원수<span class="form-required">*</span></label>
+                    <input type="number" id="maxPlayers" name="maxPlayers" class="form-control" min="1" max="999" th:value="${dto?.maxPlayers}" placeholder="최대 인원" required>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <label for="difficulty" class="form-label">난이도<span class="form-required">*</span></label>
+                    <select id="difficulty" name="difficulty" class="form-select" required>
+                        <option value="1" th:selected="${dto != null and dto.difficulty == 1}">★☆☆☆☆ (1단계)</option>
+                        <option value="2" th:selected="${dto != null and dto.difficulty == 2}">★★☆☆☆ (2단계)</option>
+                        <option value="3" th:selected="${dto != null and dto.difficulty == 3}">★★★☆☆ (3단계)</option>
+                        <option value="4" th:selected="${dto != null and dto.difficulty == 4}">★★★★☆ (4단계)</option>
+                        <option value="5" th:selected="${dto != null and dto.difficulty == 5}">★★★★★ (5단계)</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label for="horror" class="form-label">공포도<span class="form-required">*</span></label>
+                    <select id="horror" name="horror" class="form-select" required>
+                        <option value="1" th:selected="${dto != null and dto.horror == 1}">없음 (1단계)</option>
+                        <option value="2" th:selected="${dto != null and dto.horror == 2}">약간 (2단계)</option>
+                        <option value="3" th:selected="${dto != null and dto.horror == 3}">보통 (3단계)</option>
+                        <option value="4" th:selected="${dto != null and dto.horror == 4}">높음 (4단계)</option>
+                        <option value="5" th:selected="${dto != null and dto.horror == 5}">극악 (5단계)</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label for="activity" class="form-label">활동성<span class="form-required">*</span></label>
+                    <select id="activity" name="activity" class="form-select" required>
+                        <!-- 신규(dto null)면 1단계 기본 선택 -->
+                        <option value="1" th:selected="${dto == null or dto.activity == 1}">낮음 (1단계)</option>
+                        <option value="2" th:selected="${dto != null and dto.activity == 2}">보통 (2단계)</option>
+                        <option value="3" th:selected="${dto != null and dto.activity == 3}">높음 (3단계)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="description" class="form-label">테마 설명</label>
+                <textarea id="description" name="description" rows="4" class="form-control"
+                          placeholder="테마의 줄거리, 분위기, 주의사항 등을 작성해주세요" th:text="${dto?.description}"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="themeImageFile" class="form-label">테마 이미지 포스터<span th:if="${mode != 'update'}" class="form-required">*</span></label>
+                <input type="file" id="themeImageFile" name="themeImageFile" class="form-control" accept="image/*" th:required="${mode != 'update'}">
+                <div class="ne-hint" th:text="${mode == 'update' ? '새 이미지를 선택하지 않으면 기존 이미지 유지' : '테마 메인에 노출될 포스터 이미지를 업로드하세요.'}">안내</div>
+            </div>
+
+            <div th:if="${not empty errorMessage}" class="text-danger mb-2" th:text="${errorMessage}"></div>
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-primary" th:text="${mode == 'update' ? '수정' : '등록'}">등록</button>
+                <button type="button" class="btn btn-outline-primary" onclick="history.back()">취소</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>
