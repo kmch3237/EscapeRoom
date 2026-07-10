@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<!-- error.jsp -> Thymeleaf. errorMsg 를 alert 후 뒤로가기 -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>error</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+</head>
+<body>
+    <!-- JS 안에서 서버값 쓰려면 th:inline (JSTL ${} 대체) -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        alert(/*[[${errorMsg}]]*/ '오류가 발생했습니다.');
+        history.back();
+        /*]]>*/
+    </script>
+</body>
+</html>

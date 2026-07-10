@@ -1,0 +1,84 @@
+<!--
+  ============================================================
+  [방식 2] Thymeleaf 페이징 — "자바는 숫자만, 화면이 그린다"
+  ============================================================
+
+  흐름:
+    service 가 계산해서 model 에 "숫자"만 담아줌
+      startPage   = 현재 블록 시작 페이지 (예: 11)
+      endPage     = 현재 블록 끝 페이지  (예: 20)
+      currentPage = 지금 보는 페이지     (예: 15)
+      totalPage   = 전체 페이지 수        (예: 40)
+      tab         = 현재 탭 번호
+
+    → 화면(th:each)이 그 숫자로 <a> 링크들을 직접 그린다.
+
+  즉 "그리는 일"을 화면(Thymeleaf)이 하고,
+  자바는 계산(숫자)만 담당한다. (관심사 분리)
+-->
+
+<div class="paginate">
+
+    <!-- 처음 / 이전 블록 : 현재 블록이 1블록이 아닐 때만 (startPage > 1) -->
+    <a th:if="${startPage > 1}"
+       th:href="@{/mypage/reservations(tab=${tab}, page=1)}"
+       title="처음">&laquo;</a>
+
+    <a th:if="${startPage > 1}"
+       th:href="@{/mypage/reservations(tab=${tab}, page=${startPage - 1})}"
+       title="이전">&lt;</a>
+
+
+    <!-- 페이지 번호 반복 : startPage ~ endPage 까지
+         #numbers.sequence(a, b) = a부터 b까지 숫자 리스트를 만들어 줌
+         th:block = 화면에 안 보이는 껍데기 태그 (반복 묶음용) -->
+    <th:block th:each="i : ${#numbers.sequence(startPage, endPage)}">
+
+        <!-- 지금 보고 있는 페이지면 링크 대신 강조 표시 (클릭 불가) -->
+        <span th:if="${i == currentPage}"
+              class="active"
+              th:text="${i}">1</span>
+
+        <!-- 나머지 페이지는 클릭 가능한 링크
+             (th:if / th:unless = if / else 처럼 짝으로 씀. Thymeleaf엔 else가 없음) -->
+        <a th:unless="${i == currentPage}"
+           th:href="@{/mypage/reservations(tab=${tab}, page=${i})}"
+           th:text="${i}">1</a>
+
+    </th:block>
+
+
+    <!-- 다음 / 마지막 블록 : 마지막 블록이 아닐 때만 (endPage < totalPage) -->
+    <a th:if="${endPage < totalPage}"
+       th:href="@{/mypage/reservations(tab=${tab}, page=${endPage + 1})}"
+       title="다음">&gt;</a>
+
+    <a th:if="${endPage < totalPage}"
+       th:href="@{/mypage/reservations(tab=${tab}, page=${totalPage})}"
+       title="마지막">&raquo;</a>
+
+</div>
+
+
+<!--
+  ★ 이 방식의 장점 (면접 포인트)
+  ------------------------------------------------------------
+  1) 관심사 분리(SoC): 자바는 숫자 계산만, HTML 모양은 화면이 결정.
+     디자인 바꿀 때 자바 안 건드림.
+
+  2) th:text 는 기본적으로 escape 되어 XSS에 안전.
+
+  3) @{...} 가 contextPath, 쿼리스트링(tab, page)을 안전하게 조립해 줌.
+     (JSP 처럼 문자열 + 로 URL 이어붙이다 실수할 일이 없음)
+
+  4) 서버 없이 브라우저로 열어도 깨지지 않는 natural template.
+
+  ※ 숫자 계산은 내 전용 클래스에서 (팀 PaginateUtil은 안 건드림):
+     PagingUtil.java  (같은 폴더)
+       totalPage(dataCount, size)    = 전체 페이지 수
+       offset(currentPage, size)     = SQL 시작 행
+       startPage(currentPage)        = ((currentPage-1)/10)*10 + 1
+       endPage(startPage, totalPage) = min(startPage + 9, totalPage)
+     → service 가 이 값들(startPage, endPage, currentPage, totalPage)을
+       model 에 담아주면, 이 화면(th:each)이 그린다.
+-->

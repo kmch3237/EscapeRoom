@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<!-- managerEnrollForm.jsp -> Thymeleaf. 사장이 매니저 계정 등록 -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- headInner 에 bootstrap + common.css 포함 -->
+    <th:block th:replace="~{fragments/common :: headInner('NoExit - 매니저 등록')}"></th:block>
+    <link rel="stylesheet" th:href="@{/dist/css/manager.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<main class="ne-main-content ne-body-offset">
+    <div class="ne-container d-flex">
+        <aside class="col-md-2">
+            <!-- 사장 공통 사이드바 fragment -->
+            <div th:replace="~{fragments/sidebar :: ownerSide}"></div>
+        </aside>
+        <div class="col-md-10">
+            <div class="container my-4" style="max-width: 600px;">
+                <div class="ne-sc">
+                    <div class="ne-sc-title fs-5">매니저 등록</div>
+
+                    <form th:action="@{/owner/manager/enroll}" method="post">
+
+                        <div class="mb-3">
+                            <label for="cafeId" class="form-label">담당 카페</label>
+                            <select id="cafeId" name="cafeId" class="form-select" required>
+                                <option value="">-- 카페 선택 --</option>
+                                <!-- c:forEach 대체 : 카페 목록으로 option 반복 -->
+                                <option th:each="cafe : ${cafeList}"
+                                        th:value="${cafe.cafeId}"
+                                        th:text="${cafe.cafeName}">카페명</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="loginId" class="form-label">매니저 아이디</label>
+                            <input type="text" id="loginId" name="loginId" class="form-control">
+                            <div th:if="${not empty errorMessage}" class="text-danger mt-2" th:text="${errorMessage}"></div>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <a th:href="@{/owner/manager}" class="btn btn-secondary">취소</a>
+                            <button type="submit" class="btn btn-primary">등록</button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>

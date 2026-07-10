@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  마이페이지 공통 사이드바 fragment 모음.
+  화면에서:  th:replace="~{fragments/sidebar :: leftSidebar('reservations')}"
+  active = 현재 화면이 어느 메뉴인지 (그 메뉴만 'active' 강조)
+-->
+<body>
+
+<!-- ============ 왼쪽 사이드바 ============ -->
+<div th:fragment="leftSidebar(active)" class="left-sidebar-wrapper">
+
+    <!-- 이 사이드바 전용 스타일 (조각과 함께 딸려감) -->
+    <style>
+        .left-sidebar-wrapper { width: 280px; flex-shrink: 0; }
+        .ne-side-profile { text-align: center; padding: 1.5rem 1rem; }
+        .ne-side-profile img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; }
+    </style>
+
+    <nav class="ne-side-nav">
+        <div class="ne-side-profile">
+            <div class="ne-sc-title">마이페이지</div>
+        </div>
+
+        <div class="ne-side-nav-section">마이 메뉴</div>
+        <!-- active 파라미터로 현재 메뉴만 'active' 붙임 (JSP의 requestURI 검사 대체) -->
+        <a th:href="@{/mypage/record}"        th:classappend="${active == 'record'}        ? 'active'">개인 기록</a>
+        <a th:href="@{/mypage/myparty}"       th:classappend="${active == 'myparty'}       ? 'active'">매칭 목록</a>
+        <a th:href="@{/mypage/reservations}"  th:classappend="${active == 'reservations'}  ? 'active'">예약 내역</a>
+        <a th:href="@{/mypage/cafe/enroll}"   th:classappend="${active == 'enroll'}        ? 'active'">카페 등록</a>
+        <a th:href="@{/mypage/cafe/drop}"     th:classappend="${active == 'cafeDrop'}      ? 'active'">카페 삭제</a>
+        <a th:href="@{/user/withdraw}">회원 탈퇴</a>
+    </nav>
+
+    <!-- 상호평가 섹션 -->
+    <div class="ne-sc m-0">
+        <div class="ne-sc-title mb-2">현재 미진행 상호평가</div>
+
+        <div class="d-flex flex-column gap-3 mt-2">
+
+            <!-- 평가할 유저가 있을 때 (c:when 대체) -->
+            <div th:each="mutual : ${mutualList}"
+                 class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                <div>
+                    <span class="fw-bold d-block" style="font-size: 14px;" th:text="${mutual.targetNickName}">닉네임</span>
+                    <span class="text-muted text-xs d-block"  th:text="${mutual.cafeName}">카페</span>
+                    <span class="text-muted text-xxs d-block" th:text="${mutual.roomName}">테마</span>
+                </div>
+                <div>
+                    <!-- data-* 커스텀 속성은 단축키 없어 만능 th:attr 로 한 번에 -->
+                    <button class="btn btn-sm btn-outline-primary" style="font-size: 12px; padding: 4px 10px;"
+                            onclick="openEvalModal(this);"
+                            th:attr="data-detail-id=${mutual.detailId},
+                                     data-target-id=${mutual.targetId},
+                                     data-target-nick=${mutual.targetNickName},
+                                     data-cafe-name=${mutual.cafeName},
+                                     data-room-name=${mutual.roomName}">
+                        평가하기
+                    </button>
+                </div>
+            </div>
+
+            <!-- 없을 때 (c:otherwise 대체) -->
+            <div th:if="${#lists.isEmpty(mutualList)}" class="text-center py-3 text-muted">
+                <span class="fw-bold d-block" style="font-size: 14px;">평가할 유저가 없습니다</span>
+            </div>
+
+        </div>
+    </div><!-- 상호 평가 섹션 -->
+
+    <!-- 상호 평가 모달 -->
+    <div class="modal fade" id="evaluationModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title fw-bold">파티원 상호 평가</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size: 12px;"></button>
+                </div>
+
+                <div class="modal-body" style="font-size: 13px;">
+                    <div class="mb-3">
+                        <span>평가 대상 파티원: </span><strong id="md-mutual-target"></strong>
+                        <br>
+                        <span>매장 / 테마: </span><strong id="md-mutual-cafe"></strong> - <strong id="md-mutual-theme"></strong>
+                    </div>
+
+                    <form id="evaluationForm">
+                        <input type="hidden" id="hiddenDetailId" name="detailId">
+                        <input type="hidden" id="hiddenTargetId" name="targetId">
+
+                        <div class="mb-3">
+                            <p class="fw-bold mb-2">1. <span th:text="${questionList[0]}">질문1</span></p>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="answer1" id="a1good" value="1" checked>
+                                    <label class="form-check-label" for="a1good">네</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="answer1" id="a1bad" value="2">
+                                    <label class="form-check-label" for="a1bad">아니요</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <p class="fw-bold mb-2">2. <span th:text="${questionList[1]}">질문2</span></p>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="answer2" id="a2good" value="1" checked>
+                                    <label class="form-check-label" for="a2good">네</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="answer2" id="a2bad" value="2">
+                                    <label class="form-check-label" for="a2bad">아니요</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="submitEvaluation()">평가 완료</button>
+                </div>
+            </div>
+        </div>
+    </div><!-- 상호 평가 모달 -->
+
+    <!-- 상호평가 관련 JS (조각과 함께 딸려감) -->
+    <script>
+        // 평가 모달 열기
+        function openEvalModal(btn) {
+            document.getElementById('hiddenDetailId').value = btn.getAttribute('data-detail-id');
+            document.getElementById('hiddenTargetId').value = btn.getAttribute('data-target-id');
+            document.getElementById('md-mutual-target').innerText = btn.getAttribute('data-target-nick');
+            document.getElementById('md-mutual-cafe').innerText   = btn.getAttribute('data-cafe-name');
+            document.getElementById('md-mutual-theme').innerText  = btn.getAttribute('data-room-name');
+            new bootstrap.Modal(document.getElementById('evaluationModal')).show();
+        }
+
+        // 평가 제출 (JS 안에서는 @{} 안 먹으므로 URL 은 절대경로로 직접 작성)
+        function submitEvaluation() {
+            const formData = new FormData(document.getElementById('evaluationForm'));
+            const evaluationData = {
+                detailId: document.getElementById('hiddenDetailId').value,
+                targetId: document.getElementById('hiddenTargetId').value,
+                q1Answer: formData.get('answer1'),
+                q2Answer: formData.get('answer2')
+            };
+            fetch('/mypage/evaluation/write', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(evaluationData)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("서버 처리 실패");
+                return response.text();
+            })
+            .then(result => {
+                if (result === "success") {
+                    alert("상호 평가가 정상적으로 등록되었습니다.");
+                    bootstrap.Modal.getInstance(document.getElementById('evaluationModal')).hide();
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error("평가 등록 에러:", error);
+                alert("평가 등록 중 오류가 발생했습니다.");
+            });
+        }
+    </script>
+
+</div><!-- 왼쪽 사이드바 fragment 끝 -->
+
+
+<!-- ============ 오른쪽 사이드바 (예약 캘린더 + 매너온도) ============ -->
+<div th:fragment="rightSidebar" class="right-sidebar">
+
+    <!-- 달력 레이아웃 CSS (조각과 함께 딸려감) -->
+    <style>
+        .fc-daygrid-day-frame { height: 40px !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; align-items: center !important; }
+        .fc-daygrid-day-events { order: 2 !important; justify-content: center !important; }
+        .fc-event-time, .fc-event-title { display: none !important; font-size: 0 !important; line-height: 0 !important; margin: 0 !important; padding: 0 !important; }
+        .fc-daygrid-event { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+        .fc-daygrid-event-dot { display: block !important; border: none !important; background-color: #0d6efd !important; width: 6px !important; height: 6px !important; border-radius: 50% !important; }
+    </style>
+
+    <!-- 예약 캘린더 -->
+    <div class="ne-sc m-0">
+        <div class="ne-sc-title">예약 캘린더</div>
+        <div id="calendar" style="font-size: 14px;"></div>
+    </div>
+
+    <!-- 매너온도 -->
+    <div class="ne-sc m-0">
+        <div class="ne-sc-title">매너 온도</div>
+        <div class="d-flex align-items-center gap-2 mt-2">
+            <span class="ne-mannero" style="font-size: 18px; padding: 0.4em 0.8em;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-fire" viewBox="0 0 16 16">
+                    <path d="M8 16c3.314 0 6-2 6-5.5 0-1.5-.5-4-2.5-6 .25 1.5-1.25 2-1.25 2C11 4 9 .5 6 0c.357 2 .5 4-2 6-1.25 1-2 2.729-2 4.5C2 14 4.686 16 8 16m0-1c-1.657 0-3-1-3-2.75 0-.75.25-2 1.25-3C6.125 10 7 10.5 7 10.5c-.375-1.25.5-3.25 2-3.5-.179 1-.25 2 1 3 .625.5 1 1.364 1 2.25C11 14 9.657 15 8 15"/>
+                </svg>
+                <span th:text="|${userManner}°C|">36.5°C</span>
+            </span>
+        </div>
+        <p class="ne-hint mt-3">매너온도는 매칭 시 참고 지표로 활용됩니다.<br>매너있는 플레이로 매너 온도를 높여보세요!</p>
+    </div>
+
+    <!-- 예약 조회 모달 -->
+    <div class="modal fade" id="reservationModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title fw-bold">예약 내역 상세</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size: 12px;"></button>
+                </div>
+                <div class="modal-body" id="reservation-detail-container" style="font-size: 13px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FullCalendar CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+    <!-- 달력 JS : th:inline 으로 서버 reservationList 를 통째로 JS 배열로 넘김 -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // JSTL 로 한 줄씩 찍던 events 를, 서버 List 통째로 받아 JS 에서 가공
+            const reservationList = /*[[${reservationList}]]*/ [];
+            const events = reservationList.map(r => ({ start: r.reservedAt, display: 'list-item' }));
+
+            const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+                initialView: 'dayGridMonth',
+                headerToolbar: { center: 'title', left: 'prev', right: 'next' },
+                height: 'auto',
+                events: events,
+                // 날짜 클릭 -> 그 날 예약 상세 AJAX (JS 안이라 URL 절대경로)
+                dateClick: function (info) {
+                    const clickedDate = info.dateStr;
+                    fetch('/reservation/detail?date=' + clickedDate)
+                        .then(response => {
+                            if (!response.ok) throw new Error("예약 데이터 없음");
+                            return response.json();
+                        })
+                        .then(data => {
+                            let html = '';
+                            data.forEach(item => {
+                                html +=
+                                    '<div class="border-bottom pb-3 mb-3">' +
+                                        '<div class="mb-2"><strong>예약일시 :</strong> <span class="badge bg-warning text-dark">' + item.reservedAt + '</span></div>' +
+                                        '<div class="mb-2"><strong>매장 :</strong> <span class="fw-bold">' + item.reservedCafe + '</span></div>' +
+                                        '<div class="mb-2"><strong>테마 :</strong> <span class="text-primary fw-bold">' + item.reservedRoom + '</span></div>' +
+                                        '<div class="mt-2"><img src="/dist/images/' + item.roomImg + '" class="img-fluid rounded" style="max-height:120px;"></div>' +
+                                    '</div>';
+                            });
+                            document.getElementById('reservation-detail-container').innerHTML = html;
+                            new bootstrap.Modal(document.getElementById('reservationModal')).show();
+                        })
+                        .catch(error => {
+                            document.getElementById('reservation-detail-container').innerHTML =
+                                '<div><strong>' + clickedDate + '</strong><hr>예약 내역이 없습니다.</div>';
+                            new bootstrap.Modal(document.getElementById('reservationModal')).show();
+                        });
+                }
+            });
+            calendar.render();
+        });
+        /*]]>*/
+    </script>
+
+</div><!-- 오른쪽 사이드바 fragment 끝 -->
+
+
+<!-- ============ 사장(Owner) 사이드바 ============ -->
+<nav th:fragment="ownerSide" class="ne-side-nav" style="margin-top: 40px;">
+    <div class="ne-side-nav-section">CAFE</div>
+    <ul>
+        <li>
+            <a th:href="@{/owner/openRes}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-plus" viewBox="0 0 16 16" style="margin-right: 10px;">
+                    <path d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7"/>
+                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+                </svg>예약 등록
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/owner/resList}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-week" viewBox="0 0 16 16" style="margin-right: 10px;">
+                    <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z"/>
+                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+                </svg>예약 현황
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/owner/attendance}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill-check" viewBox="0 0 16 16" style="margin-right: 10px;">
+                    <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m1.679-4.493-1.335 2.226a.75.75 0 0 1-1.174.144l-.774-.773a.5.5 0 0 1 .708-.708l.547.548 1.17-1.951a.5.5 0 1 1 .858.514M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+                    <path d="M2 13c0 1 1 1 1 1h5.256A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1 1.544-3.393Q8.844 9.002 8 9c-5 0-6 3-6 4"/>
+                </svg>출석체크
+            </a>
+        </li>
+
+        <!-- 사장(OWNER)만 보이는 메뉴. 세션 role 로 분기 (c:if 대체) -->
+        <th:block th:if="${session.role == 'OWNER'}">
+            <li>
+                <a th:href="@{/owner/theme/manage}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16" style="margin-right: 10px;">
+                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                        <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+                    </svg>테마 관리
+                </a>
+            </li>
+            <li>
+                <a th:href="@{/owner/manager}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-patch-check-fill" viewBox="0 0 16 16" style="margin-right: 10px;">
+                        <path d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.622.638-.89-.011a2.89 2.89 0 0 0-2.924 2.924l.01.89-.636.622a2.89 2.89 0 0 0 0 4.134l.637.622-.011.89a2.89 2.89 0 0 0 2.924 2.924l.89-.01.622.636a2.89 2.89 0 0 0 4.134 0l.622-.637.89.011a2.89 2.89 0 0 0 2.924-2.924l-.01-.89.636-.622a2.89 2.89 0 0 0 0-4.134l-.637-.622.011-.89a2.89 2.89 0 0 0-2.924-2.924l-.89.01zm.287 5.984-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 8.793l2.646-2.647a.5.5 0 0 1 .708.708"/>
+                    </svg>매니저 관리
+                </a>
+            </li>
+        </th:block>
+    </ul>
+
+    <!-- 사이드바 CSS + active 강조 JS (원래 JS 방식 유지: 현재 경로와 링크 매칭) -->
+    <link rel="stylesheet" th:href="@{/dist/css/ownerSide.css}">
+    <script src="https://code.jquery.com/jquery.min.js"></script>
+    <script>
+        $(function () {
+            let path = window.location.pathname;
+            $(".ne-side-nav a").removeClass("active");
+            $(".ne-side-nav a").each(function () {
+                let findHref = $(this).attr("href");
+                if (findHref && path.indexOf(findHref) !== -1) {
+                    $(this).addClass("active");
+                }
+            });
+        });
+    </script>
+</nav>
+
+</body>
+</html>

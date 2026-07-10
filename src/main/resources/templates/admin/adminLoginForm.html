@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<!-- adminLoginForm.jsp -> Thymeleaf. 관리자 로그인 폼 (errorMessage 표시) -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- headInner 에 bootstrap + common.css 포함됨 -->
+    <th:block th:replace="~{fragments/common :: headInner('관리자 로그인')}"></th:block>
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<div class="container my-5" style="max-width: 480px;">
+
+    <a th:href="@{/}" class="d-block text-center mb-4 text-decoration-none">
+        <strong style="font-size: 28px;">Noexit<br></strong>
+        <span style="font-size: 28px;">[관리자 모드]</span>
+    </a>
+
+    <div class="ne-sc">
+        <div class="ne-sc-title fs-5">관리자 로그인</div>
+
+        <form th:action="@{/admin/login}" method="post">
+
+            <div class="mb-3">
+                <label for="loginId" class="form-label">관리자 아이디</label>
+                <input type="text" id="loginId" name="loginId" class="form-control" autocomplete="off">
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">비밀번호</label>
+                <input type="password" id="password" name="password" class="form-control">
+                <!-- c:if 대체 -->
+                <div th:if="${not empty errorMessage}" class="text-danger" th:text="${errorMessage}"></div>
+            </div>
+
+            <button type="submit" class="btn btn-dark w-100">관리자 로그인</button>
+        </form>
+    </div>
+
+    <div class="text-center mt-3 small">
+        <a th:href="@{/user/login}" class="text-muted">일반 로그인으로</a>
+    </div>
+
+</div>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>

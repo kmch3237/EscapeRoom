@@ -9,6 +9,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import com.noexit.app.common.PaginateUtil;
+import com.noexit.app.common.PagingUtil;
 import com.noexit.app.mapper.MyReservationMapper;
 import com.noexit.app.model.CancelMailDTO;
 import com.noexit.app.model.MyReservationDTO;
@@ -24,6 +25,7 @@ public class MyReservationServiceImpl implements MyReservationService {
 	// 주요 속성 구성
 	private final MyReservationMapper mapper;
 	private final PaginateUtil paginateUtil;
+	private final PagingUtil pagingUtil;      // Thymeleaf 페이징용 (숫자 계산)
 	private final MailService mailService;
 
 	@Override
@@ -156,14 +158,21 @@ public class MyReservationServiceImpl implements MyReservationService {
 				list = canceledList(map);
 			}
 			
-			// 페이징 url 구성
+			// 페이징 url 구성 (JSP용 HTML 문자열 - 기존 유지)
 			String listUrl = "/reservations?tab="+currentTab;
 			String paging = paginateUtil.paging(currentPage, totalPage, listUrl);
-			
+
+			// Thymeleaf용 블록 페이징 숫자 (내 PagingUtil)
+			int startPage = pagingUtil.startPage(currentPage);
+			int endPage = pagingUtil.endPage(startPage, totalPage);
+
 			 result.put("list", list);
 		     result.put("dataCount", dataCount);
 		     result.put("totalPage", totalPage);
 		     result.put("paging", paging);
+		     result.put("startPage", startPage);
+		     result.put("endPage", endPage);
+		     result.put("currentPage", currentPage);
 		     result.put("bookedCount", bookedCount(userId));
 			
 		} catch (Exception e) {
