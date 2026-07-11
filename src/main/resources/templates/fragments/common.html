@@ -87,6 +87,23 @@
     </th:block>
 </span>
 
+<!-- ②-b 관리자 전용 헤더 -->
+<header th:fragment="adminHeader" class="ne-header d-flex justify-content-around align-items-center bg-white shadow-sm">
+    <div class="nav-left">
+        <ul class="d-flex m-0 gap-3"><li><strong>관리자 페이지</strong></li></ul>
+    </div>
+    <div class="logo">
+        <h1 class="m-0">
+            <a th:href="@{/admin/main}" class="no-hover">
+                <img th:src="@{/dist/images/logo.png}" alt="로고이미지" style="height: 40px;" />
+            </a>
+        </h1>
+    </div>
+    <div class="nav-right">
+        <ul class="d-flex m-0 gap-3"><li><a th:href="@{/admin/logout}">LOGOUT</a></li></ul>
+    </div>
+</header>
+
 <!-- ③ 공통 footer (+ bootstrap JS 스크립트) -->
 <th:block th:fragment="footer">
     <footer class="ne-footer">
