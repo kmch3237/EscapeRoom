@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!-- openRes.jsp -> Thymeleaf. 사장 예약 슬롯 등록 + 등록된 슬롯 목록(AJAX) -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/common :: headInner('NoExit - 예약등록')}"></th:block>
+    <link rel="stylesheet" th:href="@{/dist/css/openRes.css}">
+    <script src="https://code.jquery.com/jquery.min.js"></script>
+    <!-- th:inline : 초기 loadList 에 서버 schDate 를 넘기기 위함 -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        $(function () {
+            // 진입 시 오늘(schDate)/전체카페(null) 로 목록 조회
+            loadList(/*[[${schDate}]]*/ '', null);
+
+            $("#selectDate").on("change", function () { loadList($(this).val(), $("#selectCafe").val()); });
+            $("#selectCafe").on("change", function () { loadList($("#selectDate").val(), $(this).val()); });
+
+            // 카페 변경 -> 테마 목록 AJAX
+            $("#cafeSelect").on("change", function () {
+                const cafeId = $(this).val();
+                $("#themeSelect").empty().append('<option value="" disabled selected>-- 테마 선택 --</option>');
+                if (!cafeId) return;
+                $.ajax({
+                    url: '/owner/openRes/theme', type: 'GET', data: { cafeId: cafeId },
+                    success: function (res) {
+                        res.forEach(function (room) {
+                            $("#themeSelect").append('<option value="' + room.roomId + '">' + room.roomName + '</option>');
+                        });
+                    }
+                });
+            });
+
+            // 슬롯 등록
+            $("#openResBtn").on("click", function () {
+                const cafeId = $('#cafeSelect').val();
+                const roomId = $('#themeSelect').val();
+                const date = $('#openDate').val();
+                const hour = $('select[name="hour"]').val();
+                const min = $('select[name="min"]').val();
+
+                if (!cafeId || cafeId == '') { alert('카페를 선택해주세요.'); return; }
+                if (!roomId || roomId == '') { alert('테마를 선택해주세요.'); return; }
+                if (!date) { alert('날짜를 선택해주세요.'); return; }
+
+                $.ajax({
+                    url: '/owner/openRes/open', type: 'POST',
+                    data: { cafe: cafeId, theme: roomId, date: date, hour: hour, min: min },
+                    success: function (res) {
+                        alert(res.message);
+                        if (res.success) {
+                            $("#selectCafe").val(cafeId);
+                            $("#selectDate").val(date);
+                            loadList(date, cafeId);
+                        }
+                    },
+                    error: function () { alert('오류가 발생했습니다.'); }
+                });
+            });
+        });
+
+        // 등록된 슬롯 목록 AJAX
+        function loadList(schDate, schCafe) {
+            $.ajax({
+                url: '/owner/openRes/list', type: 'GET', data: { schDate: schDate, schCafe: schCafe },
+                success: function (res) {
+                    if (res.length == 0) $('#emptyList').show(); else $('#emptyList').hide();
+                    const tbody = $('tbody');
+                    tbody.empty();
+                    res.forEach(function (item) {
+                        tbody.append(
+                            '<tr>' +
+                            '<td>' + item.cafeName + '</td>' +
+                            '<td>' + item.roomName + '</td>' +
+                            '<td>' + item.openDate + '</td>' +
+                            '<td class="fw-bold">' + item.openTime + '</td>' +
+                            '<td><button type="button" class="btn ne-btn-deact" onclick="deleteOk(' + item.resOpenId + ')">삭제</button></td>' +
+                            '</tr>'
+                        );
+                    });
+                }
+            });
+        }
+
+        // 슬롯 삭제 AJAX
+        function deleteOk(resOpenId) {
+            if (confirm("정말 삭제하시겠습니까?")) {
+                $.ajax({
+                    url: '/owner/openRes/delete', type: 'POST', data: { resOpen: resOpenId },
+                    success: function (res) {
+                        alert(res.message);
+                        if (res.success) loadList($('#selectDate').val(), $('#selectCafe').val());
+                    },
+                    error: function () { alert('오류가 발생했습니다.'); }
+                });
+            }
+        }
+        /*]]>*/
+    </script>
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<main class="ne-main-content ne-body-offset">
+    <div class="ne-container d-flex">
+        <aside class="col-md-2">
+            <div th:replace="~{fragments/sidebar :: ownerSide}"></div>
+        </aside>
+        <div class="col-md-10 resWrap">
+            <div class="title">예약 등록</div>
+            <div class="d-flex justify-content-between">
+
+                <!-- 왼쪽: 슬롯 등록 폼 -->
+                <div class="resOpen">
+                    <div class="res-title">예약 시간 등록</div>
+                    <form method="post" name="resOpenForm">
+                        <div class="form-label">카페 선택</div>
+                        <select name="cafe" class="selectBox ne-box" id="cafeSelect">
+                            <option disabled selected>-- 카페 선택 --</option>
+                            <option th:each="c : ${cafeList}" th:value="${c.cafeId}" th:text="${c.cafeName}">카페</option>
+                        </select>
+                        <div class="form-label">테마 선택</div>
+                        <select name="theme" class="selectBox ne-box" id="themeSelect">
+                            <option value="" disabled selected>-- 테마 선택 --</option>
+                        </select>
+                        <div class="form-label">날짜 선택</div>
+                        <!-- JSP 스크립틀릿(내일) -> #temporals 로 오늘+1일 -->
+                        <input type="date" id="openDate" name="date" class="ne-box selectBox" th:value="${minDate}"
+                               th:min="${#temporals.format(#temporals.createToday().plusDays(1), 'yyyy-MM-dd')}"/>
+                        <div class="form-label">시간 선택</div>
+                        <div class="timeWrap">
+                            <!-- 00~23 시 : #numbers.sequence 로 생성, 2자리 포맷 -->
+                            <select name="hour" class="ne-box">
+                                <option th:each="h : ${#numbers.sequence(0, 23)}"
+                                        th:value="${#numbers.formatInteger(h, 2)}"
+                                        th:text="${#numbers.formatInteger(h, 2)}">00</option>
+                            </select> 시
+                            <!-- 00~55 분 (5분 간격) -->
+                            <select name="min" class="ne-box ms-2">
+                                <option th:each="m : ${#numbers.sequence(0, 55, 5)}"
+                                        th:value="${#numbers.formatInteger(m, 2)}"
+                                        th:text="${#numbers.formatInteger(m, 2)}">00</option>
+                            </select> 분
+                        </div>
+                        <button type="button" class="btn btn-primary" id="openResBtn">예약시간 등록</button>
+                    </form>
+                </div>
+
+                <!-- 오른쪽: 등록된 슬롯 목록 -->
+                <div class="resOpenList">
+                    <div class="topWrap">
+                        <div class="res-title d-flex justify-content-between align-items-center">
+                            <span>등록된 슬롯</span>
+                            <form action="">
+                                <select name="schCafe" class="selectBox ne-box" id="selectCafe">
+                                    <option value="">전체 카페</option>
+                                    <option th:each="c : ${cafeList}" th:value="${c.cafeId}" th:text="${c.cafeName}">카페</option>
+                                </select>
+                                <input type="date" class="ne-box" name="schDate" th:value="${schDate}" id="selectDate"
+                                       th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}"/>
+                            </form>
+                        </div>
+                    </div>
+                    <table class="ne-table">
+                        <thead>
+                            <tr>
+                                <th>카페</th>
+                                <th>테마</th>
+                                <th>날짜</th>
+                                <th>시간</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 초기 렌더(서버). 이후는 JS loadList 가 갱신 -->
+                            <tr th:each="s : ${openList}">
+                                <td th:text="${s.cafeName}">카페</td>
+                                <td th:text="${s.roomName}">테마</td>
+                                <td th:text="${s.openDate}">날짜</td>
+                                <td class="fw-bold" th:text="${s.openTime}">시간</td>
+                                <td>
+                                    <button type="button" class="btn ne-btn-deact" th:onclick="|deleteOk(${s.resOpenId})|">비활성화</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="text-center" id="emptyList" style="display: none; margin-top: 10px;">등록된 슬롯이 없습니다.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>
