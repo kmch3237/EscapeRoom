@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<!-- partyupdate.jsp -> Thymeleaf. 파티 수정 (카페->테마->슬롯 연쇄 AJAX) -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/common :: headInner('파티 수정')}"></th:block>
+    <style>
+        .container { width: 520px; margin: 2.5rem auto; }
+        .theme-info-wrap { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.25rem; }
+        .theme-info-wrap .info-row { display: flex; justify-content: space-between; font-size: .88rem; }
+        .theme-info-wrap .info-row > span:first-child { color: var(--ne-text-2); font-weight: 600; }
+        .theme-info-wrap .info-row > span:last-child { font-weight: 600; }
+        .write-wrap form { display: flex; flex-direction: column; gap: .35rem; }
+        .write-wrap .form-label { margin-top: .5rem; margin-bottom: 0; }
+        .write-wrap .gender-check { display: flex; align-items: center; gap: .5rem; margin: .6rem 0; font-size: .9rem; cursor: pointer; }
+        .write-wrap .gender-check input { width: 1.15em; height: 1.15em; accent-color: var(--ne-primary); cursor: pointer; }
+        .write-btn { display: flex; justify-content: center; gap: .5rem; margin-top: 1.5rem; }
+        .write-btn .btn { min-width: 120px; }
+    </style>
+
+    <script src="https://code.jquery.com/jquery.min.js"></script>
+    <!-- JS 곳곳에 쓰이는 서버값들을 th:inline 으로 상수화 (URL은 절대경로) -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const PARTY_ID    = /*[[${party.partyId}]]*/ 0;
+        const SEL_THEME   = /*[[${dto.themeId}]]*/ 0;   // 현재 선택돼야 할 테마
+        const SEL_SLOT    = /*[[${dto.slotId}]]*/ 0;    // 현재 선택돼야 할 슬롯
+        const MODE        = /*[[${mode}]]*/ 'update';
+
+        $(function () {
+            // 카페 바뀌면 -> 테마 목록 로드 (info-row 에 위임)
+            $(".info-row").on("change", "[name='cafeName']", function () {
+                getThemeList(this.value);
+            });
+            // 테마 바뀌면 -> 슬롯 목록 로드
+            $(".info-row").on("change", "[name='themeName']", function () {
+                getSlotList(this.value);
+            });
+            // 진입 시 카페 change 를 강제 발생 -> 연쇄 로드 시작
+            $("[name='cafeName']").trigger("change");
+        });
+
+        function partyUpdate() {
+            const f = document.writeForm;
+            let str = f.partyName.value.trim();
+            if (!str) { alert("파티명을 입력해야 합니다."); f.partyName.focus(); return; }
+            str = f.partyComment.value.trim();
+            if (!str) { alert("코멘트를 입력해야합니다."); f.partyComment.focus(); return; }
+            f.action = '/party/update/' + PARTY_ID;
+            f.submit();
+        }
+
+        function cancel() {
+            if (MODE == 'update') {
+                window.location.href = '/party/board/' + PARTY_ID;
+            }
+        }
+
+        // 카페 -> 테마 목록 AJAX
+        function getThemeList(cafeId) {
+            $.ajax({
+                type: "POST", url: "/party/theme/" + cafeId, dataType: "json",
+                success: function (data) { themeListInsert(data); },
+                error: function (e) { alert("데이터 불러오기 실패"); console.log(e.responseText); }
+            });
+        }
+        function themeListInsert(data) {
+            let themeList = document.querySelector("[name='themeName']");
+            themeList.length = 0;   // 초기화
+            data.forEach(function (item) { themeList.insertAdjacentHTML("beforeend", createTheme(item)); });
+            $("[name='themeName']").trigger("change");
+        }
+        function createTheme(item) {
+            if (item.themeId == SEL_THEME)
+                return "<option value=" + item.themeId + " style='color:orange;' selected>" + item.themeName + "</option>";
+            return "<option value=" + item.themeId + ">" + item.themeName + "</option>";
+        }
+
+        // 테마 -> 슬롯 목록 AJAX
+        function getSlotList(themeId) {
+            $.ajax({
+                type: "POST", url: "/party/slot/" + themeId, dataType: "json",
+                success: function (data) { slotListInsert(data); infoInsert(themeId); },
+                error: function (e) { alert("데이터 불러오기 실패"); console.log(e.responseText); }
+            });
+        }
+        function slotListInsert(data) {
+            let slotList = document.querySelector("[name='slotId']");
+            slotList.length = 0;
+            data.forEach(function (item) { slotList.insertAdjacentHTML("beforeend", createSlot(item)); });
+            $("[name='dateTime']").trigger("change");
+        }
+        function createSlot(item) {
+            if (item.slotId == SEL_SLOT)
+                return "<option value=" + item.slotId + " style='color:orange;' selected>" + item.resDate + "</option>";
+            return "<option value=" + item.slotId + ">" + item.resDate + "</option>";
+        }
+
+        // 슬롯 -> 인원/가격 정보 AJAX
+        function infoInsert(slotId) {
+            let players = document.querySelector("#players");
+            let price = document.querySelector("#price");
+            $.ajax({
+                type: "POST", url: "/party/time/" + slotId, dataType: "json",
+                success: function (data) {
+                    let info = data[0];
+                    players.textContent = info.minPlayers + "명 ~ " + info.maxPlayers + "명";
+                    price.textContent = info.price + "원";
+                },
+                error: function (e) { alert("서버 오류"); console.log(e.responseText); }
+            });
+        }
+        /*]]>*/
+    </script>
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<main class="ne-main-content ne-body-offset">
+    <div class="ne-container">
+        <div class="container">
+            <div class="ne-sc">
+
+                <div class="ne-sc-title" th:text="${mode == 'write' ? '파티 개설' : '파티 수정'}">파티 수정</div>
+
+                <!-- 테마 정보 -->
+                <div class="theme-info-wrap content-box-yellow">
+                    <div class="info-row"><span>카페명</span>
+                        <select name="cafeName">
+                            <option th:each="cafe : ${cafeList}" th:value="${cafe.cafeId}"
+                                    th:selected="${cafe.cafeId == dto.cafeId}"
+                                    th:style="${cafe.cafeId == dto.cafeId ? 'color:orange;' : ''}"
+                                    th:text="${cafe.cafeName}">카페</option>
+                        </select>
+                    </div>
+
+                    <div class="info-row"><span>테마명</span>
+                        <select name="themeName"></select>
+                    </div>
+
+                    <div class="info-row"><span>일시</span>
+                        <select name="slotId" form="writeForm"></select>
+                    </div>
+
+                    <div class="info-row"><span>인원수</span><span id="players"></span></div>
+                    <div class="info-row"><span>가격</span><span id="price"></span></div>
+                </div>
+
+                <!-- 작성 폼 -->
+                <div class="write-wrap">
+                    <form action="" class="write-form" method="post" name="writeForm" id="writeForm">
+                        <label class="form-label">파티명 <span class="form-required">*</span></label>
+                        <input type="text" class="form-control" name="partyName" th:value="${party.partyName}" maxlength="20" placeholder="파티명을 입력하세요">
+
+                        <label class="gender-check">
+                            <input type="checkbox" name="genderId" value="1" th:checked="${party.genderId == 1}">
+                            동성만 모집
+                        </label>
+
+                        <label class="form-label">코멘트 <span class="form-required">*</span></label>
+                        <input type="text" class="form-control" th:value="${party.partyComment}" name="partyComment" maxlength="30" placeholder="파티원에게 전할 내용을 입력하세요">
+                    </form>
+                </div>
+
+                <!-- 버튼 -->
+                <div class="write-btn">
+                    <button type="button" class="btn btn-primary" onclick="partyUpdate()" th:text="${mode == 'write' ? '파티 개설' : '파티 수정'}">파티 수정</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="cancel()">취소하기</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>
