@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<!-- myparty.jsp -> Thymeleaf. 내 파티(신청/현재/종료/강퇴) 4패널 -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/common :: headInner('myparty')}"></th:block>
+    <style>
+        .container { display: flex; flex-direction: column; gap: 1.25rem; padding: 1.5rem 0; }
+        .header { text-align: center; }
+        .header .title { font-weight: 800; font-size: 1.4rem; }
+        .body { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+        .body > div { height: 420px; display: flex; flex-direction: column; gap: .5rem; }
+        .panel-title { display: flex; align-items: center; gap: .4rem; font-weight: 700; font-size: .92rem; color: var(--ne-text); padding-bottom: .5rem; margin-bottom: .25rem; border-bottom: 2px solid var(--ne-primary); }
+        .apply-list, .current-party-list, .end-party-list, .kick-party-list { display: flex; flex-direction: column; gap: .5rem; overflow-y: auto; flex: 1; }
+        .apply-item, .current-item, .end-item, .kick-item { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .65rem .85rem; background: #ffffff; border: 1px solid var(--ne-border); border-radius: var(--ne-radius-sm); }
+        .end-item, .kick-item { background: var(--ne-bg); }
+        .apply-info, .current-info, .end-info, .kick-info { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .55rem; font-size: .84rem; min-width: 0; }
+        .apply-info span:first-child, .current-info span:first-child, .end-info span:first-child, .kick-info span:first-child { font-weight: 700; color: var(--ne-text); }
+        .apply-info span, .current-info span, .end-info span, .kick-info span { color: var(--ne-text-2); }
+        .action-btn { flex-shrink: 0; border: 1.5px solid var(--ne-border-dark); border-radius: var(--ne-radius-sm); padding: .3rem .7rem; font-size: .8rem; font-weight: 600; color: var(--ne-text-2); background: #ffffff; cursor: pointer; transition: all .13s; }
+        .action-btn:hover { border-color: var(--ne-primary); background: var(--ne-primary-light); color: var(--ne-primary-dark); }
+        .action-btn.danger { border-color: #fca5a5; color: var(--ne-red); }
+        .action-btn.danger:hover { background: var(--ne-red-bg); color: var(--ne-red); }
+        .main-body { display: flex; width: 100%; box-sizing: border-box; padding-left: 2rem; padding-right: 2rem; gap: 1.5rem; }
+        .main-content { flex-grow: 1; min-width: 0; }
+        .right-sidebar { width: 340px; flex-shrink: 0; display: flex; flex-direction: column; }
+        .ne-sc-title { display: flex; justify-content: space-between; }
+    </style>
+    <script>
+        // JS 안이라 URL 절대경로 사용
+        function applyCancel(btn) {
+            if (confirm("신청 취소하시겠습니까?")) {
+                window.location.href = "/party/apply/cancel/" + btn.value;
+            }
+        }
+        function onBoard(btn) {
+            window.location.href = "/party/board/" + btn.value;
+        }
+    </script>
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<div class="main-body ne-body-offset">
+
+    <div th:replace="~{fragments/sidebar :: leftSidebar('myparty')}"></div>
+
+    <div class="main-content">
+        <div class="ne-sc">
+            <main class="ne-main-content ne-body-offset">
+                <div class="ne-container">
+                    <div class="container">
+                        <div class="body">
+
+                            <!-- 파티 신청 현황 -->
+                            <div class="party-apply ne-sc">
+                                <div class="panel-title">파티 신청 현황</div>
+                                <div class="apply-list">
+                                    <div th:each="apply : ${myPartyApplyList}" class="apply-item">
+                                        <div class="apply-info">
+                                            <span th:text="${apply.partyName}">파티명</span>
+                                            <span th:text="${apply.themeName}">테마</span>
+                                            <span th:text="${apply.resDate}">날짜</span>
+                                            <span th:text="${apply.resTime}">시간</span>
+                                        </div>
+                                        <div class="apply-status">
+                                            <button type="button" class="action-btn danger" th:value="${apply.applyId}" onclick="applyCancel(this)">취소</button>
+                                        </div>
+                                    </div>
+                                    <span th:if="${#lists.isEmpty(myPartyApplyList)}">신청 내역이 없습니다.</span>
+                                </div>
+                            </div>
+
+                            <!-- 현재 파티 (close 아닌 것) -->
+                            <div class="current-party ne-sc">
+                                <div class="panel-title">현재 파티</div>
+                                <div class="current-party-list">
+                                    <th:block th:each="party : ${myPartyList}">
+                                        <div th:if="${party.partyStatus != 'close'}" class="current-item">
+                                            <div class="current-info">
+                                                <span th:text="${party.partyName}">파티명</span>
+                                                <span th:text="${party.themeName}">테마</span>
+                                                <span th:text="${party.resDate}">날짜</span>
+                                                <span th:text="${party.resTime}">시간</span>
+                                            </div>
+                                            <div class="current-btn">
+                                                <button type="button" class="action-btn" th:value="${party.partyId}" onclick="onBoard(this)">보드</button>
+                                            </div>
+                                        </div>
+                                    </th:block>
+                                    <span th:if="${#lists.isEmpty(myPartyList)}">파티 목록이 없습니다.</span>
+                                </div>
+                            </div>
+
+                            <!-- 종료된 파티 (close) -->
+                            <div class="end-party ne-sc">
+                                <div class="panel-title">
+                                    종료된 파티
+                                    <span class="ne-st ne-st-sm ne-st-gray">완료</span>
+                                </div>
+                                <div class="end-party-list">
+                                    <th:block th:each="party : ${myPartyList}">
+                                        <div th:if="${party.partyStatus == 'close'}" class="end-item">
+                                            <div class="end-info">
+                                                <span th:text="${party.partyName}">파티명</span>
+                                                <span th:text="${party.themeName}">테마</span>
+                                                <span th:text="${party.resDate}">날짜</span>
+                                                <span th:text="${party.resTime}">시간</span>
+                                            </div>
+                                        </div>
+                                    </th:block>
+                                    <span th:if="${#lists.isEmpty(myPartyList)}">파티 목록이 없습니다.</span>
+                                </div>
+                            </div>
+
+                            <!-- 강퇴된 파티 -->
+                            <div class="kick-party ne-sc">
+                                <div class="panel-title">
+                                    강퇴된 파티
+                                    <span class="ne-st ne-st-sm ne-st-red">강퇴</span>
+                                </div>
+                                <div class="kick-party-list">
+                                    <div th:each="party : ${myPartyKickList}" class="kick-item">
+                                        <div class="kick-info">
+                                            <span th:text="${party.partyName}">파티명</span>
+                                            <span th:text="${party.themeName}">테마</span>
+                                            <span th:text="${party.resDate}">날짜</span>
+                                            <span th:text="${party.resTime}">시간</span>
+                                        </div>
+                                        <div class="kick-info">
+                                            <span th:text="${party.kickDate}">강퇴일</span>
+                                            <span th:text="${party.kickTime}">강퇴시각</span>
+                                        </div>
+                                    </div>
+                                    <span th:if="${#lists.isEmpty(myPartyKickList)}">강퇴 이력이 없습니다.</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/sidebar :: rightSidebar}"></div>
+
+</div>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>
