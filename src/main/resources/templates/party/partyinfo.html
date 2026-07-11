@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<!-- partyinfo.jsp -> Thymeleaf. 파티 상세 + 신청 -->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/common :: headInner('파티 정보')}"></th:block>
+    <style>
+        .container { display: flex; gap: 1.5rem; padding: 2rem 0; align-items: flex-start; }
+        .party-info-wrap { flex: 1; }
+        .party-apply-wrap { width: 320px; flex-shrink: 0; }
+        .party-name { font-size: 1.4rem; font-weight: 800; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+        .theme-info { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+        .theme-info .ne-tag { font-weight: 600; }
+        .party-condition { margin-bottom: 1.25rem; }
+        .party-condition .party-comment { margin-top: .6rem; padding: .75rem 1rem; background: var(--ne-bg); border-radius: var(--ne-radius-sm); font-size: .88rem; line-height: 1.6; color: var(--ne-text-2); }
+        .party-crew { display: flex; flex-direction: column; gap: .4rem; }
+        .crew { display: grid; grid-template-columns: 1fr auto auto auto auto; align-items: center; gap: .75rem; padding: .7rem 1rem; background: #ffffff; border: 1px solid var(--ne-border); border-radius: var(--ne-radius-sm); font-size: .88rem; }
+        .crew .crew-name { font-weight: 700; }
+        .crew .crew-sub { color: var(--ne-text-2); font-size: .84rem; }
+        .party-apply-wrap .apply-comment { width: 100%; padding: .55rem .8rem; border: 1.5px solid var(--ne-border-dark); border-radius: var(--ne-radius-sm); font-size: .9rem; color: var(--ne-text); margin-bottom: .8rem; transition: border-color .15s, box-shadow .15s; }
+        .party-apply-wrap .apply-comment:focus { outline: none; border-color: var(--ne-primary); box-shadow: 0 0 0 .2rem rgba(253, 180, 0, .2); }
+        .party-apply-wrap .btn { width: 100%; }
+    </style>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // 신청 폼 action 에 partyId 가 필요 -> th:inline 으로 서버값 받기
+        const PARTY_ID = /*[[${dto.partyId}]]*/ 0;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const applyComment = document.querySelector("[name='applyComment']");
+            if (applyComment) {
+                applyComment.addEventListener("keydown", function (evt) {
+                    if (evt.key == "Enter") { evt.preventDefault(); partyApply(); }
+                });
+            }
+        });
+
+        function partyApply() {
+            const f = document.partyApplyForm;
+            let comment = f.applyComment.value.trim();
+            if (!comment) { alert("신청 메시지를 작성하세요"); f.applyComment.focus(); return; }
+            if (!confirm("신청하시겠습니까?")) return;
+            f.action = "/party/apply/" + PARTY_ID;   // JS 안이라 절대경로
+            f.submit();
+        }
+        /*]]>*/
+    </script>
+</head>
+<body>
+
+<div th:replace="~{fragments/common :: header}"></div>
+
+<main class="ne-main-content ne-body-offset">
+    <div class="ne-container">
+        <div class="container">
+
+            <!-- 파티 정보 -->
+            <div class="party-info-wrap">
+                <div class="ne-sc">
+                    <div class="ne-sc-title">파티 정보</div>
+
+                    <div class="party-name">
+                        <span th:text="${dto.partyName}">파티명</span>
+                        <span th:if="${dto.slotStatus == 1}" class="ne-st ne-st-sm ne-st-green">예약 가능</span>
+                        <span th:unless="${dto.slotStatus == 1}" class="ne-st ne-st-sm ne-st-gray">예약 불가</span>
+                    </div>
+
+                    <div class="theme-info">
+                        <span class="ne-tag ne-tag-sm" th:text="${dto.cafeName}">카페</span>
+                        <span class="ne-tag ne-tag-sm" th:text="${dto.themeName}">테마</span>
+                        <span class="ne-tag ne-tag-sm" th:text="${dto.resDate}">날짜</span>
+                        <span class="ne-tag ne-tag-sm" th:text="${dto.resTime}">시간</span>
+                        <span class="ne-tag ne-tag-sm" th:text="|${dto.minPlayers}명 ~ ${dto.maxPlayers}명|">인원</span>
+                        <span class="ne-tag ne-tag-sm ne-tag-primary" th:text="|${#numbers.formatInteger(dto.price,1,'COMMA')}원|">가격</span>
+                    </div>
+
+                    <div class="party-condition">
+                        <span class="ne-tag ne-tag-sm" th:text="${dto.genderName}">성별조건</span>
+                        <div th:if="${not empty dto.partyComment}" class="party-comment" th:text="${dto.partyComment}">코멘트</div>
+                    </div>
+
+                    <div class="ne-divider"></div>
+
+                    <div class="party-crew">
+                        <div class="ne-title">파티 현황</div>
+
+                        <div th:each="crew : ${crewList}" class="crew">
+                            <span class="crew-name" th:text="${crew.nickName}">닉네임</span>
+                            <span class="crew-sub" th:text="|${crew.age}세|">나이</span>
+                            <span class="crew-sub"
+                                  th:text="${crew.gender == 'F' ? '여' : (crew.gender == 'M' ? '남' : '-')}">성별</span>
+                            <span class="ne-mannero" th:text="|🌡️ ${crew.temp}|">온도</span>
+                            <span th:if="${crew.position == 'HOST'}" class="ne-st ne-st-sm ne-st-dark">파티장</span>
+                            <span th:unless="${crew.position == 'HOST'}" class="ne-st ne-st-sm ne-st-primary">파티원</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 파티 신청 (open 상태만) -->
+            <div th:if="${dto.partyStatus == 'open'}" class="party-apply-wrap">
+                <div class="ne-sc ne-sticky">
+                    <div class="ne-sc-title">파티 신청</div>
+                    <form action="" name="partyApplyForm" method="post">
+                        <input type="text" class="apply-comment" placeholder="신청 메시지" name="applyComment" maxlength="30">
+                    </form>
+                    <button type="button" class="btn btn-primary" onclick="partyApply()">신청하기</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/common :: footer}"></div>
+
+</body>
+</html>
