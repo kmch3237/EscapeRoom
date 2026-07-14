@@ -37,7 +37,7 @@
                         <div class="mb-3">
                             <label for="loginId" class="form-label">매니저 아이디</label>
                             <input type="text" id="loginId" name="loginId" class="form-control">
-                            <div th:if="${not empty errorMessage}" class="text-danger mt-2" th:text="${errorMessage}"></div>
+                            <div th:if="${!#strings.isEmpty(errorMessage)}" class="text-danger mt-2" th:text="${errorMessage}"></div>
                         </div>
 
                         <div class="text-end mt-4">

@@ -30,7 +30,7 @@
                 <label for="password" class="form-label">비밀번호</label>
                 <input type="password" id="password" name="password" class="form-control">
                 <!-- c:if 대체 -->
-                <div th:if="${not empty errorMessage}" class="text-danger" th:text="${errorMessage}"></div>
+                <div th:if="${!#strings.isEmpty(errorMessage)}" class="text-danger" th:text="${errorMessage}"></div>
             </div>
 
             <button type="submit" class="btn btn-dark w-100">관리자 로그인</button>

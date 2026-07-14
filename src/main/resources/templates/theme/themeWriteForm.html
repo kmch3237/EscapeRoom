@@ -126,7 +126,7 @@
                 <div class="ne-hint" th:text="${mode == 'update' ? '새 이미지를 선택하지 않으면 기존 이미지 유지' : '테마 메인에 노출될 포스터 이미지를 업로드하세요.'}">안내</div>
             </div>
 
-            <div th:if="${not empty errorMessage}" class="text-danger mb-2" th:text="${errorMessage}"></div>
+            <div th:if="${!#strings.isEmpty(errorMessage)}" class="text-danger mb-2" th:text="${errorMessage}"></div>
             <div class="text-end mt-4">
                 <button type="submit" class="btn btn-primary" th:text="${mode == 'update' ? '수정' : '등록'}">등록</button>
                 <button type="button" class="btn btn-outline-primary" onclick="history.back()">취소</button>

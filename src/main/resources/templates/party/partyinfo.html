@@ -75,7 +75,7 @@
 
                     <div class="party-condition">
                         <span class="ne-tag ne-tag-sm" th:text="${dto.genderName}">성별조건</span>
-                        <div th:if="${not empty dto.partyComment}" class="party-comment" th:text="${dto.partyComment}">코멘트</div>
+                        <div th:if="${!#strings.isEmpty(dto.partyComment)}" class="party-comment" th:text="${dto.partyComment}">코멘트</div>
                     </div>
 
                     <div class="ne-divider"></div>
