@@ -14,10 +14,10 @@ spring:
       prefix: /WEB-INF/views/
       suffix: .jsp
   datasource:
-    url: jdbc:oracle:thin:@//localhost:1521/XEPDB1
+    url: ${DB_URL:jdbc:oracle:thin:@//localhost:1521/XEPDB1}
     hikari:
-      username: noexit
-      password: noexit
+      username: ${DB_USER:noexit}
+      password: ${DB_PASSWORD:noexit}
   mail:
     host: smtp.gmail.com
     port: 587

@@ -23,7 +23,8 @@
 
             <div class="mb-3">
                 <label for="loginId" class="form-label">아이디</label>
-                <input type="text" id="loginId" name="loginId" class="form-control">
+                <!-- 로그인 실패 시 입력했던 아이디 유지 (컨트롤러가 넘긴 loginId) -->
+                <input type="text" id="loginId" name="loginId" class="form-control" th:value="${loginId}">
             </div>
 
             <div class="mb-3">

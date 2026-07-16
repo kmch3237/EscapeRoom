@@ -2,6 +2,7 @@ package com.noexit.app.controller;
 
 import java.io.IOException;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -153,14 +154,20 @@ public class UserController {
 	@PostMapping("/login")
 	public String login(User user, HttpSession session, Model model) {
 
-	    User dto = null;
+	    User dto;
 	    try {
 	        dto = service.login(user);
-	    } catch (Exception e) {
-	        log.info("login : ", e);
+	    } catch (DataAccessException e) {
+	        // DB 장애: 개발자에겐 error 로그로 크게, 사용자에겐 일시적 오류로 안내(원인 노출 X)
+	        log.error("login DB error : ", e);
+	        model.addAttribute("loginId", user.getLoginId());   // 입력한 아이디 유지
+	        model.addAttribute("errorMessage", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+	        return "user/loginForm";
 	    }
 
+	    // 로그인 실패(계정 없음/비번 불일치)는 예외가 아니라 null 로 옴 → 보안상 원인 구분 없이 하나로
 	    if (dto == null) {
+	        model.addAttribute("loginId", user.getLoginId());   // 입력한 아이디 유지 (UX)
 	        model.addAttribute("errorMessage", "아이디 또는 비밀번호가 올바르지 않습니다.");
 	        return "user/loginForm";
 	    }

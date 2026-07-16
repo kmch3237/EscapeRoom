@@ -13,7 +13,7 @@
 
 	INSERT INTO USER_ACCOUNT (USER_ID, LOGIN_ID, PASSWORD, NICKNAME)
 	VALUES (#{userId}, #{loginId}
-		   , CRYPTPACK.ENCRYPT(#{password}, '12341234')
+		   , #{password}
 		   , #{nickname})
 </insert>
 
@@ -33,10 +33,10 @@
 </select>
 
 <select id="selectByLoginId" parameterType="com.noexit.app.model.User" resultType="com.noexit.app.model.User">
-      SELECT USER_ID, LOGIN_ID, NICKNAME, CREATED_AT
+      <!-- 비번 비교는 자바(BCrypt matches)가 하므로 PASSWORD(해시)를 함께 조회 -->
+      SELECT USER_ID, LOGIN_ID, NICKNAME, CREATED_AT, PASSWORD
       FROM USER_ACCOUNT
       WHERE LOGIN_ID = #{loginId}
-      AND PASSWORD = CRYPTPACK.ENCRYPT(#{password}, '12341234')
 </select>
 
 <select id="findByLoginId" parameterType="string" resultType="com.noexit.app.model.User">
@@ -71,7 +71,7 @@
 <!-- 비밀번호 변경 -->
 <update id="updatePassword" parameterType="com.noexit.app.model.User">
 	UPDATE USER_ACCOUNT
-	   SET PASSWORD = CRYPTPACK.ENCRYPT(#{password}, '12341234')
+	   SET PASSWORD = #{password}
 	 WHERE USER_ID = #{userId}
 </update>
 
@@ -86,11 +86,10 @@
 	DELETE FROM USER_INFO WHERE USER_ID = #{userId}
 </delete>
 
-<select id="countByUserIdAndPassword" parameterType="com.noexit.app.model.User" resultType="int">
-	SELECT COUNT(*)
+<select id="selectPasswordByUserId" parameterType="long" resultType="string">
+	SELECT PASSWORD
 	  FROM USER_ACCOUNT
 	 WHERE USER_ID = #{userId}
-	   AND PASSWORD = CRYPTPACK.ENCRYPT(#{password}, '12341234')
 </select>
 
 </mapper>

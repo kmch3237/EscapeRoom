@@ -23,6 +23,7 @@ public interface UserMapper {
 	// 회원탈퇴
 	public int insertUserDrop(Long userId);
 	public int deleteUserInfo(Long userId);
-	public int countByUserIdAndPassword(User user);
+	// userId 로 저장된 비번 해시만 조회 (BCrypt matches 검증용)
+	public String selectPasswordByUserId(Long userId);
 
 }

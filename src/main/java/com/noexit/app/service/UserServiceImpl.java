@@ -2,6 +2,7 @@ package com.noexit.app.service;
 
 import java.util.Random;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +21,13 @@ public class UserServiceImpl implements UserService {
 	private final UserMapper userMapper;
 	private final ManagerService managerService;
 	private final MailService mailService;
+	private final PasswordEncoder passwordEncoder;   // BCrypt
 
 	@Override
 	@Transactional
 	public void enroll(User user) {
+		// 원문 비번을 BCrypt 해시로 바꿔 저장 (SQL 은 해시 그대로 INSERT)
+		user.setPassword(passwordEncoder.encode(user.getPassword()));
 		userMapper.insertAccount(user);
 		userMapper.insertInfo(user);
 	}
@@ -41,16 +45,21 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public User login(User user) {
 
-		User dto = null;
+		// 1) loginId 로 계정 조회 (해시 비번 포함)
+		User dto = userMapper.selectByLoginId(user);
 
-		try {
-			dto = userMapper.selectByLoginId(user);
-
-
-		} catch (Exception e) {
-			log.info("login : ", e);
+		// 2) 계정 없음 → 로그인 실패 (null 반환)
+		if (dto == null) {
+			return null;
 		}
 
+		// 3) 입력 비번 vs 저장된 해시 비교 (BCrypt matches)
+		if (!passwordEncoder.matches(user.getPassword(), dto.getPassword())) {
+			return null;   // 비번 불일치 → 실패
+		}
+
+		// 4) 성공 → 비번 해시는 화면/세션에 안 남기고 지움
+		dto.setPassword(null);
 		return dto;
 	}
 
@@ -155,7 +164,8 @@ public class UserServiceImpl implements UserService {
 			User dto = userMapper.findByLoginId(loginId);
 			if (dto == null) return 0;
 
-			dto.setPassword(newPassword);
+			// 새 비번도 BCrypt 해시로 저장
+			dto.setPassword(passwordEncoder.encode(newPassword));
 			result = userMapper.updatePassword(dto);
 
 			// 세션 정리
@@ -185,16 +195,12 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public boolean verifyPassword(Long userId, String password) {
-		int count = 0;
-		try {
-			User param = new User();
-			param.setUserId(userId);
-			param.setPassword(password);
-			count = userMapper.countByUserIdAndPassword(param);
-		} catch (Exception e) {
-			log.info("verifyPassword : ", e);
+		// 저장된 해시를 꺼내와 입력 비번과 BCrypt 비교
+		String storedHash = userMapper.selectPasswordByUserId(userId);
+		if (storedHash == null) {
+			return false;
 		}
-		return count > 0;
+		return passwordEncoder.matches(password, storedHash);
 	}
 }
 
