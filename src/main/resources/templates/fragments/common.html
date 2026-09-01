@@ -87,8 +87,8 @@
     </th:block>
 </span>
 
-<!-- ②-b 관리자 전용 헤더 -->
-<header th:fragment="adminHeader" class="ne-header d-flex justify-content-around align-items-center bg-white shadow-sm">
+<!-- ②-b 관리자 전용 헤더 (div로: <header> 태그명이 :: header 선택자에 함께 잡혀 일반 페이지에 admin 헤더가 딸려오던 버그 방지) -->
+<div th:fragment="adminHeader" class="ne-header d-flex justify-content-around align-items-center bg-white shadow-sm">
     <div class="nav-left">
         <ul class="d-flex m-0 gap-3"><li><strong>관리자 페이지</strong></li></ul>
     </div>
@@ -102,7 +102,7 @@
     <div class="nav-right">
         <ul class="d-flex m-0 gap-3"><li><a th:href="@{/admin/logout}">LOGOUT</a></li></ul>
     </div>
-</header>
+</div>
 
 <!-- ③ 공통 footer (+ bootstrap JS 스크립트) -->
 <th:block th:fragment="footer">

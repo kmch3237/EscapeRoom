@@ -43,8 +43,10 @@
                             <div class="col-2"><span th:text="${#numbers.formatInteger(t.price, 1, 'COMMA')}">0</span>원</div>
                             <div class="col-2">
                                 <a th:href="@{/owner/theme/write(mode='update', roomId=${t.themeId})}" class="btn btn-sm btn-primary">수정</a>
-                                <button type="button" class="btn btn-sm btn-danger"
-                                        th:onclick="|openDropModal(${t.themeId}, '${t.themeName}')|">삭제</button>
+                                <!-- Thymeleaf 3.1: onclick에 문자열 변수 금지 → data-* 로 넘기고 JS에서 읽음 -->
+                                <button type="button" class="btn btn-sm btn-danger drop-btn"
+                                        th:data-rid="${t.themeId}"
+                                        th:data-name="${t.themeName}">삭제</button>
                             </div>
                         </div>
 
@@ -99,6 +101,11 @@
         document.getElementById('dropReasonId').value = '';
         new bootstrap.Modal(document.getElementById('themeDropModal')).show();
     }
+    // 삭제 버튼 클릭 위임 → data-* 값으로 모달 열기
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.drop-btn');
+        if (btn) openDropModal(btn.dataset.rid, btn.dataset.name);
+    });
 </script>
 
 <div th:replace="~{fragments/common :: footer}"></div>
