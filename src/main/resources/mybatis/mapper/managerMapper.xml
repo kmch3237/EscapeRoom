@@ -22,14 +22,25 @@
 
 	<!-- 매니저 등록 -->
 	<insert id="insertEnroll" parameterType="com.noexit.app.model.Manager">
+		<!-- VALUES 대신 SELECT ... FROM CAFE WHERE : 조건에 안 맞으면 넣을 행 자체가 없어진다.
+		     내 카페가 아니면 CAFE 에서 0건이 조회되므로 0건 INSERT = 아무 일도 일어나지 않는다.
+		     서비스에서 이미 막고 있지만, 서비스를 거치지 않는 호출이 생겨도 여기서 최종적으로 막힌다.
+		     ★ 0건은 예외가 아니라 "성공"으로 취급되므로, 호출한 쪽이 반환값(행 수)을 반드시 확인해야 한다. -->
 		INSERT INTO MANAGER_HISTORY (MANAGER_HISTORY_ID, CAFE_ID, USER_ID, REG_EVENT_ID)
-		VALUES (MANAGER_HISTORY_SEQ.NEXTVAL, #{cafeId}, #{userId}, 1)
+		SELECT MANAGER_HISTORY_SEQ.NEXTVAL, #{cafeId}, #{userId}, 1
+		  FROM CAFE
+		 WHERE CAFE_ID = #{cafeId}
+		   AND USER_ID = #{ownerUserId}
 	</insert>
 
 	<!-- 매니저 해제 -->
 	<insert id="insertDeact" parameterType="com.noexit.app.model.Manager">
+		<!-- 등록과 동일한 방어. REG_EVENT_ID 만 2(해제)로 다르다. -->
 		INSERT INTO MANAGER_HISTORY (MANAGER_HISTORY_ID, CAFE_ID, USER_ID, REG_EVENT_ID)
-		VALUES (MANAGER_HISTORY_SEQ.NEXTVAL, #{cafeId}, #{userId}, 2)
+		SELECT MANAGER_HISTORY_SEQ.NEXTVAL, #{cafeId}, #{userId}, 2
+		  FROM CAFE
+		 WHERE CAFE_ID = #{cafeId}
+		   AND USER_ID = #{ownerUserId}
 	</insert>
 
 	<!-- USER가 활성 매니저인지 (V_ACTIVE_MANAGER 뷰 사용) -->

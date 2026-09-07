@@ -12,8 +12,9 @@ import com.noexit.app.model.Manager;
 public interface ManagerMapper {
 
 	public List<Manager> selectActiveByOwnerUserId(Map<String, Object> map);
-	public void insertEnroll(Manager manager) throws SQLException;
-	public void insertDeact(Manager manager) throws SQLException;
+	// int 반환 = 실제로 INSERT 된 행 수. WHERE 로 걸러져 0건이 될 수 있어 반드시 확인해야 한다.
+	public int insertEnroll(Manager manager) throws SQLException;
+	public int insertDeact(Manager manager) throws SQLException;
 	public int countActiveByUserId(Long userId);
 	public int dataCount(Map<String, Object> map);
 }

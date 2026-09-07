@@ -94,7 +94,9 @@ public class OwnerManagerController {
         manager.setCafeId(cafeId);
         manager.setUserId(target.getUserId());
         try {
-            managerService.enroll(manager);
+            // cafeId 는 브라우저에서 온 값이므로 그대로 믿지 않는다.
+            // 세션의 내 userId 를 함께 넘겨서 서비스가 소유권을 판정하게 한다.
+            managerService.enroll(manager, loginUser.getUserId());
         } catch (Exception e) {
             log.info("managerEnroll : ", e);
         }
@@ -109,11 +111,13 @@ public class OwnerManagerController {
         if (redirect != null) 
         	return redirect;
 
+        User loginUser = (User) session.getAttribute("loginUser");
+
         Manager manager = new Manager();
         manager.setCafeId(cafeId);
         manager.setUserId(userId);
         try {
-            managerService.deact(manager);
+            managerService.deact(manager, loginUser.getUserId());
         } catch (Exception e) {
             log.info("managerDeact : ", e);
         }
