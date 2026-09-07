@@ -34,15 +34,27 @@
 
 <select id="selectByLoginId" parameterType="com.noexit.app.model.User" resultType="com.noexit.app.model.User">
       <!-- 비번 비교는 자바(BCrypt matches)가 하므로 PASSWORD(해시)를 함께 조회 -->
-      SELECT USER_ID, LOGIN_ID, NICKNAME, CREATED_AT, PASSWORD
-      FROM USER_ACCOUNT
-      WHERE LOGIN_ID = #{loginId}
+      <!-- USER_INFO INNER JOIN = 탈퇴 회원 차단.
+           탈퇴 시 USER_DROP 으로 옮기고 USER_INFO 행을 지우므로,
+           USER_INFO 가 없으면 = 탈퇴자 = 로그인 불가.
+           아이디찾기(findByNameAndEmail)/비번찾기(findByLoginIdAndName)는
+           이미 같은 방식으로 걸러내고 있었고, 로그인만 빠져 있었다.
+           ★ LEFT JOIN 으로 바꾸면 탈퇴자가 다시 통과하므로 금지. -->
+      SELECT UA.USER_ID, UA.LOGIN_ID, UA.NICKNAME, UA.CREATED_AT, UA.PASSWORD
+      FROM USER_ACCOUNT UA
+      JOIN USER_INFO UI ON UA.USER_ID = UI.USER_ID
+      WHERE UA.LOGIN_ID = #{loginId}
 </select>
 
 <select id="findByLoginId" parameterType="string" resultType="com.noexit.app.model.User">
-      SELECT USER_ID, LOGIN_ID, NICKNAME, CREATED_AT
-      FROM USER_ACCOUNT
-      WHERE LOGIN_ID = #{loginId}
+      <!-- selectByLoginId 와 같은 이유로 USER_INFO 를 INNER JOIN 한다.
+           탈퇴 시 USER_INFO 행이 지워지므로, JOIN 이 없으면 탈퇴자도 조회된다.
+           그러면 매니저 등록(OwnerManagerController:85)에서 탈퇴자를 매니저로 앉힐 수 있다.
+           비번 재설정(UserServiceImpl:164)도 같은 이유로 탈퇴자를 걸러야 한다. -->
+      SELECT UA.USER_ID, UA.LOGIN_ID, UA.NICKNAME, UA.CREATED_AT
+      FROM USER_ACCOUNT UA
+      JOIN USER_INFO UI ON UA.USER_ID = UI.USER_ID
+      WHERE UA.LOGIN_ID = #{loginId}
 </select>
 
 <select id="countCafeByUserId" parameterType="long" resultType="int">
