@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.noexit.app.model.AttendanceListDTO;
 import com.noexit.app.model.AttendCrew;
@@ -18,8 +19,13 @@ public interface AttendanceMapper {
 	public int dataCountByOwnerUserId(Map<String, Object> map);
 	public int dataCountByManagerUserId(Map<String, Object> map);
 
+	// 이 예약이 staffUserId 가 사장이거나 활성 매니저인 카페의 것인지 (1/0)
+	public int countStaffReservation(@Param("reservationId") Long reservationId,
+	                                 @Param("staffUserId") Long staffUserId);
+
 	// 한 예약의 파티원 리스트
-	public List<AttendCrew> selectCrewByReservationId(Long reservationId);
+	public List<AttendCrew> selectCrewByReservationId(@Param("reservationId") Long reservationId,
+	                                                  @Param("staffUserId") Long staffUserId);
 	
     public int selectAttendanceExists(Long reservationId);
     public void insertAttendance(AttendItemDTO item);
@@ -41,6 +47,7 @@ public interface AttendanceMapper {
 	public int dataCountHistoryByManagerUserId(Map<String, Object> map);
 	
 	// 출석 기록 상세
-	public List<AttendCrew> selectHistoryDetail(Long reservationId);
+	public List<AttendCrew> selectHistoryDetail(@Param("reservationId") Long reservationId,
+	                                            @Param("staffUserId") Long staffUserId);
 
 }

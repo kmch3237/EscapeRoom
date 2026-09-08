@@ -74,8 +74,17 @@ public class OwnerAttendanceController {
     	if (redirect != null) 
         	return redirect;
         
-        // 이전 선택값 복원
-        List<AttendCrew> crewList = attendanceService.getCrewDraftStatus(reservationId, session);
+        // reservationId 는 주소창에서 바꿀 수 있는 값이다. 세션의 userId 로 소유를 확인한다.
+        User loginUser = (User) session.getAttribute("loginUser");
+
+        List<AttendCrew> crewList;
+        try {
+            // 이전 선택값 복원
+            crewList = attendanceService.getCrewDraftStatus(reservationId, session, loginUser.getUserId());
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            log.warn("check 접근 거부 : ", e);
+            return "redirect:/owner/attendance";
+        }
 
         model.addAttribute("reservationId", reservationId);
         model.addAttribute("crewList", crewList);
@@ -89,8 +98,10 @@ public class OwnerAttendanceController {
         if (redirect != null) 
         	return redirect;
 
+        User loginUser = (User) session.getAttribute("loginUser");
+
         try {
-            attendanceService.saveDraft(form, session);
+            attendanceService.saveDraft(form, session, loginUser.getUserId());
         } catch (Exception e) {
             log.info("saveDraft : ", e);
         }
@@ -156,7 +167,14 @@ public class OwnerAttendanceController {
         if (redirect != null)
             return null;
 
-        return attendanceService.selectHistoryDetail(reservationId);
+        User loginUser = (User) session.getAttribute("loginUser");
+
+        try {
+            return attendanceService.selectHistoryDetail(reservationId, loginUser.getUserId());
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            log.warn("historyDetail 접근 거부 : ", e);
+            return List.of();
+        }
     }
 
 }

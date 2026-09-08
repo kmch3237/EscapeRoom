@@ -81,9 +81,26 @@
 		   ]]>
 	</select>
 
+	<!-- 이 예약이 내가 사장이거나 활성 매니저인 카페의 예약인가 : 1 이면 통과, 0 이면 남의 카페.
+	     EXISTS 는 "이런 행이 있냐"만 묻고 행을 늘리지 않는다. JOIN 으로 붙이면 매니저가 여러 명일 때
+	     COUNT 가 2,3 으로 튄다. 사장과 매니저는 카페와 연결되는 경로가 달라 OR 로 각각 묻는다. -->
+	<select id="countStaffReservation" resultType="int">
+		SELECT COUNT(*)
+		  FROM VW_RESERVATION_ALL VRA
+		 WHERE VRA.RESERVATION_ID = #{reservationId}
+		   AND ( EXISTS (SELECT 1 FROM CAFE C
+		                  WHERE C.CAFE_ID = VRA.CAFE_ID
+		                    AND C.USER_ID = #{staffUserId})
+		      OR EXISTS (SELECT 1 FROM VW_ACTIVE_MANAGER VAM
+		                  WHERE VAM.CAFE_ID = VRA.CAFE_ID
+		                    AND VAM.USER_ID = #{staffUserId}) )
+	</select>
+
 	<!--한 예약에 대한 모든 파티원 정보  -->
-	<select id="selectCrewByReservationId" parameterType="Long"
+	<select id="selectCrewByReservationId"
 	        resultType="com.noexit.app.model.AttendCrew">
+		  <!-- 서비스에서 이미 막고 있지만, 서비스를 거치지 않는 호출이 생겨도
+		       내 카페가 아니면 여기서 0건이 되도록 EXISTS 를 한 겹 더 둔다. -->
 		  SELECT USER_ID, NICKNAME, POSITION
 		  FROM (
 		      SELECT P.USER_ID, UA.NICKNAME, 'HOST' AS POSITION
@@ -102,8 +119,17 @@
 		         SELECT 1 FROM PARTY_KICK PK WHERE PK.MEMBER_ID = PM.MEMBER_ID
 		       )
 		  )
+		  WHERE EXISTS (
+		      SELECT 1 FROM VW_RESERVATION_ALL VRA
+		       WHERE VRA.RESERVATION_ID = #{reservationId}
+		         AND ( EXISTS (SELECT 1 FROM CAFE C
+		                        WHERE C.CAFE_ID = VRA.CAFE_ID
+		                          AND C.USER_ID = #{staffUserId})
+		            OR EXISTS (SELECT 1 FROM VW_ACTIVE_MANAGER VAM
+		                        WHERE VAM.CAFE_ID = VRA.CAFE_ID
+		                          AND VAM.USER_ID = #{staffUserId}) )
+		  )
 		  ORDER BY DECODE(POSITION, 'HOST', 0, 1), USER_ID
-		 
 	</select>
 	
 	<!-- 출석체크 진입 가능 여부 : 취소 아님 + 시작 1시간 전 이후면 1, 아니면 0 -->
@@ -212,14 +238,26 @@
 	</select>
 	
 	<!-- 출석기록 상세 -->
-	<select id="selectHistoryDetail" parameterType="Long"
+	<select id="selectHistoryDetail"
    	     resultType="com.noexit.app.model.AttendCrew">
+   	 <!-- ${} 는 값을 SQL 문자열에 그대로 붙여 SQL Injection 통로가 된다. #{} 로 바꿔 바인딩한다.
+   	      카페 조건도 없어 남의 카페 출석기록이 그대로 조회되던 곳이라 EXISTS 를 한 겹 둔다. -->
    	 SELECT AD.USER_ID, UA.NICKNAME, AD.ATTEND_STATUS_ID, TS.STATUS_NAME
    	   FROM ATTENDANCE A
        JOIN ATTENDANCE_DETAIL AD ON A.ATTENDANCE_ID = AD.ATTENDANCE_ID
        JOIN USER_ACCOUNT UA ON AD.USER_ID = UA.USER_ID
        LEFT JOIN ATTEND_STATUS TS ON AD.ATTEND_STATUS_ID = TS.STATUS_ID
-       WHERE A.RESERVATION_ID = ${reservationId}
+       WHERE A.RESERVATION_ID = #{reservationId}
+         AND EXISTS (
+             SELECT 1 FROM VW_RESERVATION_ALL VRA
+              WHERE VRA.RESERVATION_ID = A.RESERVATION_ID
+                AND ( EXISTS (SELECT 1 FROM CAFE C
+                               WHERE C.CAFE_ID = VRA.CAFE_ID
+                                 AND C.USER_ID = #{staffUserId})
+                   OR EXISTS (SELECT 1 FROM VW_ACTIVE_MANAGER VAM
+                               WHERE VAM.CAFE_ID = VRA.CAFE_ID
+                                 AND VAM.USER_ID = #{staffUserId}) )
+         )
        ORDER BY AD.USER_ID
 	</select>
 	

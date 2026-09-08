@@ -76,13 +76,29 @@ public class AttendanceServiceImpl implements AttendanceService {
 		return result;
 	}
 
+	// role 검사(checkStaff)는 "스태프냐"만 본다. 어느 카페 스태프인지는 보지 않으므로
+	// 예약 한 건마다 "내 카페 것이냐"를 따로 물어야 한다. 연결 관계는 DB 에만 있으므로 DB 에 묻는다.
 	@Override
-	public List<AttendCrew> selectCrewByReservationId(Long reservationId) {
+	public void assertMyReservation(Long reservationId, Long staffUserId) {
+
+		if (reservationId == null || staffUserId == null) {
+			throw new IllegalArgumentException("출석 검증 파라미터 누락 : reservationId=" + reservationId);
+		}
+
+		if (mapper.countStaffReservation(reservationId, staffUserId) == 0) {
+			// 존재하지 않는 예약과 남의 카페 예약을 구분해 알려주지 않는다(번호 넘겨짚기 방지).
+			throw new IllegalStateException(
+					"출석 접근 거부 : 내 카페 예약이 아님. reservationId=" + reservationId + ", userId=" + staffUserId);
+		}
+	}
+
+	@Override
+	public List<AttendCrew> selectCrewByReservationId(Long reservationId, Long staffUserId) {
 
 		List<AttendCrew> list = null;
 
 		try {
-			list = mapper.selectCrewByReservationId(reservationId);
+			list = mapper.selectCrewByReservationId(reservationId, staffUserId);
 		} catch (Exception e) {
 			log.info("selectCrewByReservationId : ", e);
 		}
@@ -94,7 +110,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 	// 개별 출석체크 임시저장
 	@Override
-	public void saveDraft(AttendForm form, HttpSession session) throws Exception {
+	public void saveDraft(AttendForm form, HttpSession session, Long staffUserId) throws Exception {
+
+		// 폼 값은 hidden 이어도 브라우저가 바꿀 수 있다. 세션에 담기 전에 검증한다.
+		assertMyReservation(form.getReservationId(), staffUserId);
 
 		try {
 			@SuppressWarnings("unchecked")
@@ -150,6 +169,10 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 			// 예약별 처리
 			for (Long reservationId : resIds) {
+
+			    // draft 는 세션에 있지만 담길 때의 검증만으로는 부족하다.
+			    // 매너온도를 깎는 쓰기 경로이므로 확정 직전에 한 번 더 확인한다.
+			    assertMyReservation(reservationId, staffUserId);
 
 			    AttendItemDTO head = new AttendItemDTO();
 
@@ -286,9 +309,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 	
 	@Override
-	public List<AttendCrew> getCrewDraftStatus(Long reservationId, HttpSession session) {
+	public List<AttendCrew> getCrewDraftStatus(Long reservationId, HttpSession session, Long staffUserId) {
 
-	    List<AttendCrew> crewList = selectCrewByReservationId(reservationId);
+	    assertMyReservation(reservationId, staffUserId);
+
+	    List<AttendCrew> crewList = selectCrewByReservationId(reservationId, staffUserId);
 
 	    // 이전 선택값 복원
 	    @SuppressWarnings("unchecked")
@@ -310,12 +335,14 @@ public class AttendanceServiceImpl implements AttendanceService {
 	
 	// 출석기록 상세 (파티원별 확정 출석상태)
 	@Override
-	public List<AttendCrew> selectHistoryDetail(Long reservationId) {
+	public List<AttendCrew> selectHistoryDetail(Long reservationId, Long staffUserId) {
+
+	    assertMyReservation(reservationId, staffUserId);
 
 	    List<AttendCrew> list = null;
 
 	    try {
-	        list = mapper.selectHistoryDetail(reservationId);
+	        list = mapper.selectHistoryDetail(reservationId, staffUserId);
 	    } catch (Exception e) {
 	        log.info("selectHistoryDetail : ", e);
 	    }
