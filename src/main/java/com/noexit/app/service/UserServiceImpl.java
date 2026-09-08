@@ -77,14 +77,13 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public String findRole(Long userId) {
 
-		try {
-			if (userMapper.countCafeByUserId(userId) > 0)       
-				return "OWNER";
-			if (managerService.countActiveByUserId(userId) > 0)  return 
-					"MANAGER";
-		} catch (Exception e) {
-			log.info("findRole : ", e);
-		}
+		// 쿼리가 깨진 것과 "해당 없음"은 다르다.
+		// 예외를 삼키면 DB 오류가 '권한 없는 일반 회원'으로 둔갑하므로 잡지 않는다.
+		if (userMapper.countCafeByUserId(userId) > 0)
+			return "OWNER";
+
+		if (managerService.countActiveByUserId(userId) > 0)
+			return "MANAGER";
 
 		return "USER";
 	}

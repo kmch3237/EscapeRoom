@@ -172,7 +172,17 @@ public class UserController {
 	        return "user/loginForm";
 	    }
 
-	    String role = service.findRole(dto.getUserId());
+	    // findRole 도 DB 를 타므로 실패할 수 있다. try 는 이 한 줄만 감싼다.
+	    String role;
+	    try {
+	        role = service.findRole(dto.getUserId());
+	    } catch (DataAccessException e) {
+	        log.error("findRole DB error : ", e);
+	        model.addAttribute("loginId", user.getLoginId());
+	        model.addAttribute("errorMessage", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+	        return "user/loginForm";
+	    }
+
 	    session.setAttribute("loginUser", dto);
 	    session.setAttribute("role", role);
 	    return "redirect:/";

@@ -91,12 +91,7 @@ public class ManagerServiceImpl implements ManagerService {
 
 	@Override
 	public int countActiveByUserId(Long userId) {
-		int count = 0;
-		try {
-			count = mapper.countActiveByUserId(userId);
-		} catch (Exception e) {
-			log.info("countActiveByUserId : ", e);
-		}
-		return count;
+		// 조회 실패를 0(=매니저 아님)으로 바꾸지 않는다. 예외는 그대로 위로 올린다.
+		return mapper.countActiveByUserId(userId);
 	}
 }

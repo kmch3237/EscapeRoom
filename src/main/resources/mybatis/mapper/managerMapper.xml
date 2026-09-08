@@ -4,7 +4,7 @@
     "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.noexit.app.mapper.ManagerMapper">
 
-	<!-- 사장 소유 카페들의 활성 매니저 목록 (V_ACTIVE_MANAGER 뷰 사용) -->
+	<!-- 사장 소유 카페들의 활성 매니저 목록 (VW_ACTIVE_MANAGER 뷰 사용) -->
 	<select id="selectActiveByOwnerUserId" parameterType="map" resultType="com.noexit.app.model.Manager">
 		 SELECT *
 		 FROM VW_ACTIVE_MANAGER
@@ -16,7 +16,7 @@
 	<!-- 매니저 갯수 (페이징용) -->
 	<select id="dataCount" parameterType="map" resultType="int">
 		SELECT NVL(COUNT(*), 0)
-		  FROM V_ACTIVE_MANAGER
+		  FROM VW_ACTIVE_MANAGER
 		 WHERE OWNER_USER_ID = #{ownerUserId}
 	</select>
 
@@ -43,9 +43,9 @@
 		   AND USER_ID = #{ownerUserId}
 	</insert>
 
-	<!-- USER가 활성 매니저인지 (V_ACTIVE_MANAGER 뷰 사용) -->
+	<!-- USER가 활성 매니저인지 (VW_ACTIVE_MANAGER 뷰 사용) -->
 	<select id="countActiveByUserId" parameterType="long" resultType="int">
-		SELECT COUNT(*) FROM V_ACTIVE_MANAGER WHERE USER_ID = #{userId}
+		SELECT COUNT(*) FROM VW_ACTIVE_MANAGER WHERE USER_ID = #{userId}
 	</select>
 
 </mapper>
