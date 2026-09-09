@@ -24,15 +24,22 @@
  		<selectKey keyProperty="themeId" resultType="long" order="BEFORE">
  			SELECT ROOM_SEQ.NEXTVAL FROM DUAL
  		</selectKey>
+ 		<!-- VALUES 대신 SELECT ... FROM DUAL WHERE EXISTS 를 쓴다.
+ 		     cafeId 는 폼에서 온 값이라 남의 카페 ID 일 수 있다.
+ 		     그 카페가 내 것이 아니면 SELECT 가 0건 -> INSERT 도 0건이 된다. -->
  		INSERT INTO ROOM (
  			ROOM_ID, CAFE_ID, ROOM_NAME, GENRE_ID, DURATION,
  			DIFFICULTY, HORROR_GRADE, ACTIVITY_GRADE,
  			MIN_PLAYERS, MAX_PLAYERS, ROOM_DESC, ROOM_IMG, PRICE, IS_ADULT
- 		) VALUES (
- 			#{themeId}, #{cafeId}, #{themeName}, #{genre}, #{duration},
- 			#{difficulty}, #{horror}, #{activity},
- 			#{minPlayers}, #{maxPlayers}, #{description}, #{imagePath}, #{price}, #{adult}
  		)
+ 		SELECT #{themeId}, #{cafeId}, #{themeName}, #{genre}, #{duration},
+ 		       #{difficulty}, #{horror}, #{activity},
+ 		       #{minPlayers}, #{maxPlayers}, #{description}, #{imagePath}, #{price}, #{adult}
+ 		  FROM DUAL
+ 		 WHERE EXISTS (SELECT 1
+ 		                 FROM CAFE C
+ 		                WHERE C.CAFE_ID = #{cafeId}
+ 		                  AND C.USER_ID = #{ownerUserId})
  	</insert>
 
  	<!-- 테마 단일 조회 (수정 폼용) -->
@@ -91,6 +98,18 @@
  		     , PRICE = #{price}
  		     , IS_ADULT = #{adult}
  		 WHERE ROOM_ID = #{themeId}
+ 		   <!-- (1) 지금 이 테마가 '내' 카페 것인가.
+ 		        WHERE 는 UPDATE 전 값으로 평가되므로 ROOM.CAFE_ID 는 '수정 전' 카페다. -->
+ 		   AND EXISTS (SELECT 1
+ 		                 FROM CAFE C
+ 		                WHERE C.CAFE_ID = ROOM.CAFE_ID
+ 		                  AND C.USER_ID = #{ownerUserId})
+ 		   <!-- (2) 옮겨 붙일 대상 카페도 '내' 카페인가.
+ 		        이게 없으면 SET CAFE_ID = #{cafeId} 로 남의 카페에 테마를 넘길 수 있다. -->
+ 		   AND EXISTS (SELECT 1
+ 		                 FROM CAFE C2
+ 		                WHERE C2.CAFE_ID = #{cafeId}
+ 		                  AND C2.USER_ID = #{ownerUserId})
  	</update>
 
 

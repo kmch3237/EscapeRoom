@@ -110,15 +110,29 @@ public class OwnerThemeController {
         String redirect = AuthUtil.checkOwner(session);
         if (redirect != null) 
         	return redirect;
+
+        User loginUser = (User) session.getAttribute("loginUser");
+        // 폼으로 들어온 ownerUserId 는 여기서 세션 값으로 덮어쓴다
+        dto.setOwnerUserId(loginUser.getUserId());
+
         try {
-            if ("update".equals(mode)) 
-            	themeService.themeUpdate(dto);
-            else 
-            	themeService.themeInsert(dto);
+            // 매퍼는 원래부터 int(반영된 행 수)를 돌려주고 있었는데 그동안 버리고 있었다.
+            // 소유권 조건에 걸리면 SQL 은 예외를 던지지 않고 조용히 0건을 반영한다.
+            // 그래서 0건을 직접 확인하지 않으면 '실패했는데 성공한 것처럼' 보인다.
+            int result = "update".equals(mode)
+                       ? themeService.themeUpdate(dto)
+                       : themeService.themeInsert(dto);
+
+            if (result == 0) {
+                // 정상 사용자는 자기 카페만 폼에서 고를 수 있으므로 여기 올 수 없다.
+                // 여기 왔다는 건 요청을 손으로 조작했다는 뜻 → 화면엔 알리지 않고 로그에 남긴다.
+                log.warn("theme write denied - not owner. mode={}, themeId={}, cafeId={}, userId={}",
+                         mode, dto.getThemeId(), dto.getCafeId(), loginUser.getUserId());
+                return "redirect:/owner/theme/manage";
+            }
         } catch (Exception e) {
             log.info("theme write (" + mode + ") : ", e);
 
-            User loginUser = (User) session.getAttribute("loginUser");
             model.addAttribute("errorMessage", "테마 " + ("update".equals(mode) ? "수정" : "등록") + " 중 오류 발생");
             model.addAttribute("cafeList", cafeService.selectByUserId(loginUser.getUserId()));
             model.addAttribute("genreList", genreService.getGenreList());

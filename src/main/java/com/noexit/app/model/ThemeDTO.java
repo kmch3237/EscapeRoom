@@ -17,6 +17,8 @@ public class ThemeDTO
 	
 	private String cafeId;
 	private String cafeName;
+	// 폼이 아니라 세션에서 채우는 값. 소유권 검증용
+	private Long ownerUserId;
 	private String cafeLocation;
 	private String cafePhone;
 	
