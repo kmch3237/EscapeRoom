@@ -17,6 +17,7 @@ import com.noexit.app.model.UserEnrollForm;
 import com.noexit.app.service.MailService;
 import com.noexit.app.service.UserService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -152,7 +153,7 @@ public class UserController {
 
 	// 로그인 처리
 	@PostMapping("/login")
-	public String login(User user, HttpSession session, Model model) {
+	public String login(User user, HttpSession session, HttpServletRequest request, Model model) {
 
 	    User dto;
 	    try {
@@ -182,6 +183,12 @@ public class UserController {
 	        model.addAttribute("errorMessage", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
 	        return "user/loginForm";
 	    }
+
+	    // 로그인 성공 = 권한 수준이 올라가는 순간.
+	    // 이 시점에 세션 ID를 새로 발급하지 않으면, 로그인 전에 심어진 세션 ID가
+	    // 그대로 '로그인된 세션'이 된다(세션 고정 공격).
+	    // changeSessionId() 는 세션 객체와 속성은 그대로 두고 식별자만 갈아끼운다.
+	    request.changeSessionId();
 
 	    session.setAttribute("loginUser", dto);
 	    session.setAttribute("role", role);
