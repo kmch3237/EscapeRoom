@@ -5,8 +5,8 @@
 <mapper namespace="com.noexit.app.mapper.MypageMapper">
 	
 <select id="getUserRecord" parameterType="map" resultType="com.noexit.app.model.MyPage">
-    SELECT * FROM (
-        SELECT rownum AS rnum, A.* FROM (
+    <bind name="lim" value="endRow - startRow + 1"/>
+    <bind name="off" value="startRow - 1"/>
             SELECT 
 		    RC.DETAIL_ID AS detailId,  
 		    C.ROOM_NAME AS roomName, 
@@ -37,10 +37,7 @@
             LEFT OUTER JOIN REVIEW RV ON RC.DETAIL_ID = RV.DETAIL_ID
             WHERE AD.USER_ID = #{userId}
             ORDER BY RO.OPEN_AT DESC
-        ) A
-        WHERE rownum &lt;= #{endRow} 
-    )
-    WHERE rnum &gt;= #{startRow}
+            LIMIT #{lim} OFFSET #{off}
 </select>
 
 
@@ -82,7 +79,6 @@
 
 	<select id="getUserManner" resultType="double">
 		SELECT FN_GET_MANNER(#{userId}) AS MANNER
-		FROM DUAL
 	</select>
 
 	<select id="getRoomImg" parameterType="Long" resultType="com.noexit.app.model.MyPage">
@@ -137,7 +133,7 @@
 	<insert id="insertRecord" parameterType="com.noexit.app.model.MyPage">
 	    INSERT INTO RECORD (RECORD_ID, DETAIL_ID, PLAY_TIME, HINT_COUNT, PLAYER_COUNT
 	    					, RECORD_COMMENT, IS_ESCAPED)
-	    VALUES (RECORD_SEQ.NEXTVAL, #{detailId}, #{playTime}, #{hintCount}, #{peopleCount}, #{recordComment}, #{isEscaped})
+	    VALUES (NEXTVAL(RECORD_SEQ), #{detailId}, #{playTime}, #{hintCount}, #{peopleCount}, #{recordComment}, #{isEscaped})
 	</insert>
 
 
@@ -166,7 +162,7 @@
 	        REVIEW_ID, DETAIL_ID, DIFFICULTY, HORROR, 
 	        ACTIVITY, IMMERSION, SATISFACTION, REVIEW_COMMENT) 
 	        VALUES (
-	        REVIEW_SEQ.NEXTVAL, #{detailId}, #{difficulty}, #{horror}, 
+	        NEXTVAL(REVIEW_SEQ), #{detailId}, #{difficulty}, #{horror}, 
 	        #{activity}, #{immersion}, #{satisfaction}, #{reviewComment})
 	</insert>
 
@@ -195,7 +191,7 @@
 	
 	<select id="getReservationList" parameterType="long" resultType="com.noexit.app.model.MyPage">
 	
-	    SELECT DISTINCT TO_CHAR(RO.OPEN_AT, 'YYYY-MM-DD') AS reservedAt
+	    SELECT DISTINCT DATE_FORMAT(RO.OPEN_AT, '%Y-%m-%d') AS reservedAt
 	    FROM ATTENDANCE_DETAIL AD
 	    JOIN ATTENDANCE AT
 	    ON AD.ATTENDANCE_ID = AT.ATTENDANCE_ID
@@ -213,7 +209,7 @@
 	
 		
 	<select id="getReservationDetail" parameterType="map" resultType="com.noexit.app.model.MyPage">
-	    SELECT TO_CHAR(RO.OPEN_AT, 'YYYY-MM-DD HH24:MI') AS reservedAt
+	    SELECT DATE_FORMAT(RO.OPEN_AT, '%Y-%m-%d %H:%i') AS reservedAt
 	     , CA.CAFE_NAME AS reservedCafe
 	     , C.ROOM_NAME AS reservedRoom
 	     , C.ROOM_IMG AS roomImg
@@ -233,7 +229,7 @@
 	    JOIN CAFE CA
 	    ON C.CAFE_ID = CA.CAFE_ID
 	    WHERE AD.USER_ID = #{userId}
-	    AND TO_CHAR(RO.OPEN_AT, 'YYYY-MM-DD') = #{date}
+	    AND DATE_FORMAT(RO.OPEN_AT, '%Y-%m-%d') = #{date}
 	    ORDER BY RO.OPEN_AT
 	</select>
 	

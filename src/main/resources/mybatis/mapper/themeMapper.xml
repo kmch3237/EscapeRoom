@@ -22,7 +22,7 @@
     <!-- 테마등록  -->
  	<insert id="themeInsert" parameterType="com.noexit.app.model.ThemeDTO">
  		<selectKey keyProperty="themeId" resultType="long" order="BEFORE">
- 			SELECT ROOM_SEQ.NEXTVAL FROM DUAL
+ 			SELECT NEXTVAL(ROOM_SEQ) FROM DUAL
  		</selectKey>
  		INSERT INTO ROOM (
  			ROOM_ID, CAFE_ID, ROOM_NAME, GENRE_ID, DURATION,
@@ -60,12 +60,12 @@
  		 WHERE C.USER_ID = #{ownerUserId}
  		 	AND NOT EXISTS (SELECT 1 FROM ROOM_DROP RD WHERE RD.ROOM_ID = R.ROOM_ID)
  		 ORDER BY R.ROOM_ID DESC
- 		 OFFSET #{offset} ROWS FETCH FIRST #{size} ROWS ONLY
+ 		 LIMIT #{size} OFFSET #{offset}
  	</select>
 
  	<!-- 테마 갯수 (페이징용) -->
  	<select id="dataCount" parameterType="map" resultType="int">
- 		SELECT NVL(COUNT(*), 0)
+ 		SELECT COUNT(*)
  		  FROM ROOM R
  		  JOIN CAFE C ON R.CAFE_ID = C.CAFE_ID
  		  			AND NOT EXISTS 
@@ -130,7 +130,7 @@
  	<!-- 테마 정보 가져오기 -->
  	<select id="getThemeInfoById" parameterType="long" resultType="com.noexit.app.model.ThemeDTO">
 		SELECT A.ROOM_ID themeId, A.ROOM_IMG imagePath, B.CAFE_NAME cafeName
-		, B.ADDRESS || ' ' || B.ADDRESS_DETAIL cafeLocation, B.PHONE cafePhone
+		, CONCAT(B.ADDRESS, ' ', IFNULL(B.ADDRESS_DETAIL, '')) cafeLocation, B.PHONE cafePhone
 		, A.ROOM_NAME themeName, C.GENRE_NAME genre, A.DURATION duration
 		, A.DIFFICULTY difficulty, A.HORROR_GRADE horror, A.ACTIVITY_GRADE activity
 		, A.PRICE price, A.IS_ADULT adult, A.MIN_PLAYERS minPlayers
@@ -169,14 +169,14 @@
 	 		
  		</where>
  		ORDER BY A.ROOM_ID DESC
- 		FETCH FIRST 4 ROWS ONLY
+ 		LIMIT 4
  	</select>
 
  	<!-- 하나의 테마의 슬롯 현황 가져오기 -->
  	<select id="getThemeSlot" parameterType="long" resultType="com.noexit.app.model.ThemeSlotDTO">
- 		SELECT RES_OPEN_ID AS slotId,TO_CHAR(OPEN_AT,'YYYY-MM-DD') as resDate, TO_CHAR(OPEN_AT, 'HH24:MI') as resTime , FN_RESERVATION_CHECK(RES_OPEN_ID) AS status
+ 		SELECT RES_OPEN_ID AS slotId,DATE_FORMAT(OPEN_AT, '%Y-%m-%d') as resDate, DATE_FORMAT(OPEN_AT, '%H:%i') as resTime , FN_RESERVATION_CHECK(RES_OPEN_ID) AS status
 		FROM RES_OPEN
-		WHERE ROOM_ID = #{themeId} AND OPEN_AT > SYSDATE + 1
+		WHERE ROOM_ID = #{themeId} AND OPEN_AT > NOW() + INTERVAL 1 DAY
 		ORDER BY OPEN_AT ASC
  	</select>
 
@@ -203,11 +203,11 @@
 
 	<select id="getTotalReview" parameterType="long" resultType="com.noexit.app.model.ThemeReviewDTO">
 	
-		SELECT TRUNC(NVL(AVG(A.DIFFICULTY),0),0) AS DIFFICULTY
-		,TRUNC(NVL(AVG(A.HORROR),0),0) AS HORROR
-		,TRUNC(NVL(AVG(A.ACTIVITY),0),0) AS ACTIVITY
-		,TRUNC(NVL(AVG(A.IMMERSION),0),0) AS IMMERSION
-		,TRUNC(NVL(AVG(A.SATISFACTION),0),0) AS SATISFACTION
+		SELECT TRUNCATE(IFNULL(AVG(A.DIFFICULTY),0),0) AS DIFFICULTY
+		,TRUNCATE(IFNULL(AVG(A.HORROR),0),0) AS HORROR
+		,TRUNCATE(IFNULL(AVG(A.ACTIVITY),0),0) AS ACTIVITY
+		,TRUNCATE(IFNULL(AVG(A.IMMERSION),0),0) AS IMMERSION
+		,TRUNCATE(IFNULL(AVG(A.SATISFACTION),0),0) AS SATISFACTION
 		FROM REVIEW A
 		JOIN ATTENDANCE_DETAIL B
 		ON A.DETAIL_ID = B.DETAIL_ID
@@ -235,7 +235,7 @@
 	<!-- 테마 삭제 = ROOM_DROP에 INSERT (본인 카페의 테마일 때만) -->
 	<insert id="insertRoomDrop" parameterType="map">
 		INSERT INTO ROOM_DROP (ROOM_DROP_ID, ROOM_ID, DROP_REASON_ID)
-		SELECT ROOM_DROP_SEQ.NEXTVAL, #{themeId}, #{dropReasonId}
+		SELECT NEXTVAL(ROOM_DROP_SEQ), #{themeId}, #{dropReasonId}
 		FROM ROOM R
 		JOIN CAFE C ON R.CAFE_ID = C.CAFE_ID
 		WHERE R.ROOM_ID = #{themeId}

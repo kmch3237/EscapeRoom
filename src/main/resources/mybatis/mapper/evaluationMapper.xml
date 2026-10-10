@@ -6,7 +6,7 @@
 	
 	<insert id="insertEvaluation" parameterType="com.noexit.app.model.Evaluation">
         INSERT INTO MUTUAL_EVALUATION (EVAL_ID, DETAIL_ID, TARGET_ID, QUESTION_ID, ANSWER_ID, CREATED_AT)
-        VALUES (MUTUAL_EVALUATION_SEQ.NEXTVAL, #{detailId}, #{targetId}, #{questionId}, #{answerId}, SYSDATE)
+        VALUES (NEXTVAL(MUTUAL_EVALUATION_SEQ), #{detailId}, #{targetId}, #{questionId}, #{answerId}, NOW())
     </insert>
 
 	<select id="getEvaluationCount" parameterType="long" resultType="int">
@@ -26,11 +26,11 @@
 
 	<insert id="insertMannerHistory" parameterType="long">
 	    INSERT INTO MANNER_HISTORY(MANNER_HISTORY_ID, USER_ID, REASON_ID, SCORE, CREATED_AT)
-	    VALUES(MANNER_HISTORY_SEQ.NEXTVAL, 
+	    VALUES(NEXTVAL(MANNER_HISTORY_SEQ), 
 	        (SELECT USER_ID FROM ATTENDANCE_DETAIL WHERE DETAIL_ID = #{detailId}), 
 	        2, 
 	        0.2, 
-	        SYSDATE
+	        NOW()
 	    )
 	</insert>
 

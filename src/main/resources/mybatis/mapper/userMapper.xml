@@ -7,7 +7,7 @@
 <insert id="insertAccount" parameterType="com.noexit.app.model.User">
 
 	<selectKey keyProperty="userId" resultType="Long" order="BEFORE">
-		SELECT  USER_ACCOUNT_SEQ.NEXTVAL
+		SELECT  NEXTVAL(USER_ACCOUNT_SEQ)
 		FROM DUAL
 	</selectKey>
 
@@ -21,7 +21,7 @@
 <insert id="insertInfo" parameterType="com.noexit.app.model.User">
 
 	INSERT INTO USER_INFO (USER_ID, EMAIL, NAME, PHONE, GENDER, BIRTHDATE)
-	VALUES (#{userId}, #{email}, #{name}, #{phone}, #{gender}, TO_DATE(#{birthDate}, 'YYYY-MM-DD'))
+	VALUES (#{userId}, #{email}, #{name}, #{phone}, #{gender}, STR_TO_DATE(#{birthDate}, '%Y-%m-%d'))
 </insert>
 
 <select id="countByLoginId" parameterType="string" resultType="int">

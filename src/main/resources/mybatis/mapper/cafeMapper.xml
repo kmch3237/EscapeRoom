@@ -7,7 +7,7 @@
 	
 	<insert id="insertCafe" parameterType="com.noexit.app.model.Cafe">
     <selectKey keyProperty="cafeId" resultType="long" order="BEFORE">
-        SELECT CAFE_SEQ.NEXTVAL FROM DUAL
+        SELECT NEXTVAL(CAFE_SEQ) FROM DUAL
     </selectKey>
     INSERT INTO CAFE (
         CAFE_ID, USER_ID, BR_NO, CAFE_NAME, PHONE
@@ -46,7 +46,7 @@
 	<!-- 카페 삭제 CAFE_DROP에 INSERT -->
 	<insert id="insertCafeDrop" parameterType="com.noexit.app.model.Cafe">
 		INSERT INTO CAFE_DROP (CAFE_DROP_ID, CAFE_ID, DROP_REASON_ID)
-		SELECT CAFE_DROP_SEQ.NEXTVAL, #{cafeId}, #{dropReasonId}
+		SELECT NEXTVAL(CAFE_DROP_SEQ), #{cafeId}, #{dropReasonId}
 	    FROM CAFE
 	    WHERE CAFE_ID = #{cafeId}
 	    AND USER_ID = #{userId}

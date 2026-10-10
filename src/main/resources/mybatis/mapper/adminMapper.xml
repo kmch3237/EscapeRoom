@@ -14,9 +14,9 @@
 
 	<select id="getDashboardStats" resultType="com.noexit.app.model.AdminDashboard">
 		SELECT 
-	        (SELECT COUNT(*) FROM CAFE) AS "totalCafeCount",
-	        (SELECT COUNT(*) FROM USER_ACCOUNT) AS "totalMemberCount",
-	        (SELECT COUNT(*) FROM ROOM) AS "totalThemeCount"
+	        (SELECT COUNT(*) FROM CAFE) AS totalCafeCount,
+	        (SELECT COUNT(*) FROM USER_ACCOUNT) AS totalMemberCount,
+	        (SELECT COUNT(*) FROM ROOM) AS totalThemeCount
 		FROM DUAL
 	</select>
 

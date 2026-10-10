@@ -14,7 +14,7 @@
           END AS PARTY_ROLE
     	, CASE 
         	WHEN VRA.CANCEL_AT IS NOT NULL THEN '예약 취소' 
-         	<![CDATA[WHEN VRA.OPEN_AT < SYSDATE THEN  '플레이 완료' ]]>
+         	<![CDATA[WHEN VRA.OPEN_AT < NOW() THEN  '플레이 완료' ]]>
         	ELSE '예약 중' 
       	  END AS RES_STATUS
     	, VRA.RES_OPEN_ID, VRA.OPEN_AT, VRA.BOOKED_AT
@@ -52,7 +52,7 @@
 		SELECT COUNT(*)
 		FROM (
 		<include refid="myReservationQuery" />
-		)
+		) T
 		WHERE RES_STATUS = '예약 중'
 
 	</select>
@@ -62,7 +62,7 @@
 		SELECT COUNT(*)
 		FROM (
 		<include refid="myReservationQuery" />
-		)
+		) T
 		WHERE RES_STATUS = '플레이 완료'
 
 	</select>
@@ -73,7 +73,7 @@
 		SELECT COUNT(*)
 		FROM (
 		<include refid="myReservationQuery" />
-		)
+		) T
 		WHERE RES_STATUS = '예약 취소'
 
 	</select>
@@ -84,14 +84,13 @@
 		resultType="com.noexit.app.model.MyReservationDTO">
 		SELECT RESERVATION_ID, CAFE_ID, CAFE_NAME, PHONE AS CAFE_TEL, ROOM_ID, ROOM_NAME
 		, PARTY_ID, PARTY_NAME
-		, TO_CHAR(OPEN_AT,'YYYY-MM-DD HH24:MI') AS OPEN_AT , TOTAL_MEMBER, PARTY_ROLE
+		, DATE_FORMAT(OPEN_AT, '%Y-%m-%d %H:%i') AS OPEN_AT , TOTAL_MEMBER, PARTY_ROLE
 		FROM (
 		<include refid="myReservationQuery" />
-		)
+		) T
 		WHERE RES_STATUS = '예약 중'
-		ORDER BY TO_DATE(OPEN_AT, 'YYYY-MM-DD HH24:MI') DESC
-		OFFSET #{offset} ROWS
-		FETCH FIRST #{size} ROWS ONLY
+		ORDER BY OPEN_AT DESC
+		LIMIT #{size} OFFSET #{offset}
 
 	</select>
 
@@ -100,14 +99,13 @@
 		resultType="com.noexit.app.model.MyReservationDTO">
 		SELECT RESERVATION_ID, CAFE_ID, CAFE_NAME, PHONE AS CAFE_TEL, ROOM_ID, ROOM_NAME
 		, PARTY_ID, PARTY_NAME
-		, TO_CHAR(OPEN_AT,'YYYY-MM-DD HH24:MI') AS OPEN_AT , ATTEND_STATUS
+		, DATE_FORMAT(OPEN_AT, '%Y-%m-%d %H:%i') AS OPEN_AT , ATTEND_STATUS
 		FROM (
 		<include refid="myReservationQuery" />
-		)
+		) T
 		WHERE RES_STATUS = '플레이 완료'
-		ORDER BY TO_DATE(OPEN_AT, 'YYYY-MM-DD HH24:MI') DESC
-		OFFSET #{offset} ROWS
-		FETCH FIRST #{size} ROWS ONLY
+		ORDER BY OPEN_AT DESC
+		LIMIT #{size} OFFSET #{offset}
 	</select>
 
 
@@ -117,15 +115,14 @@
 
 		SELECT RESERVATION_ID, CAFE_ID, CAFE_NAME, PHONE AS CAFE_TEL, ROOM_ID, ROOM_NAME
 		, PARTY_ID, PARTY_NAME
-		, TO_CHAR(OPEN_AT,'YYYY-MM-DD HH24:MI') AS OPEN_AT , CANCEL_TYPE
-		, TO_CHAR(CANCELED_AT, 'YYYY-MM-DD') AS CANCELED_AT
+		, DATE_FORMAT(OPEN_AT, '%Y-%m-%d %H:%i') AS OPEN_AT , CANCEL_TYPE
+		, DATE_FORMAT(CANCELED_AT, '%Y-%m-%d') AS CANCELED_AT
 		FROM (
 		<include refid="myReservationQuery" />
-		)
+		) T
 		WHERE RES_STATUS = '예약 취소'
-		ORDER BY TO_DATE(OPEN_AT, 'YYYY-MM-DD HH24:MI') DESC
-		OFFSET #{offset} ROWS
-		FETCH FIRST #{size} ROWS ONLY
+		ORDER BY OPEN_AT DESC
+		LIMIT #{size} OFFSET #{offset}
 	</select>
 	
 	
@@ -140,7 +137,7 @@
 		, VRA.CAFE_ID, VRA.CAFE_NAME
 		, VRA.ROOM_ID, VRA.ROOM_NAME
 		, VRA.RES_OPEN_ID
-		, TO_CHAR(VRA.OPEN_AT, 'YYYY-MM-DD HH24:MI') AS OPEN_AT
+		, DATE_FORMAT(VRA.OPEN_AT, '%Y-%m-%d %H:%i') AS OPEN_AT
 		, PA.USER_ID, UA.NICKNAME, UI.NAME, UI.EMAIL
 		FROM PARTY_DROP PD
 		    JOIN PARTY_APPLY PA
@@ -168,7 +165,7 @@
 		, VRA.CAFE_ID, VRA.CAFE_NAME
 		, VRA.ROOM_ID, VRA.ROOM_NAME
 		, VRA.RES_OPEN_ID
-		, TO_CHAR(VRA.OPEN_AT, 'YYYY-MM-DD HH24:MI') AS OPEN_AT
+		, DATE_FORMAT(VRA.OPEN_AT, '%Y-%m-%d %H:%i') AS OPEN_AT
 		, P.USER_ID, UA.NICKNAME, UI.NAME, UI.EMAIL
 		FROM PARTY_DROP PD
 		    JOIN PARTY P

@@ -63,7 +63,7 @@
 		FROM
 		(
 			SELECT A.PARTY_ID AS partyId ,D.ROOM_IMG AS themeImg, D.ROOM_NAME AS themeName
-			, TO_CHAR(C.OPEN_AT,'YYYY-MM-DD') AS resDate, TO_CHAR(C.OPEN_AT,'HH24:MI') AS resTime
+			, DATE_FORMAT(C.OPEN_AT, '%Y-%m-%d') AS resDate, DATE_FORMAT(C.OPEN_AT, '%H:%i') AS resTime
 			, A.PARTY_NAME AS partyName, E.AGE AS avgAge, E.TEMP AS avgTemp, E.COUNT AS memberCount
 			, FN_GET_PARTY_CONDITION(A.PARTY_ID) AS STATUS
 			FROM PARTY A
@@ -75,12 +75,12 @@
 			ON C.ROOM_ID = D.ROOM_ID
 			JOIN 
 			(
-			    SELECT PARTY_ID,TRUNC(NVL(AVG(AGE),-1),1) AS AGE, TRUNC(NVL(AVG(TEMP),-1),1) AS TEMP, COUNT(*) AS COUNT
+			    SELECT PARTY_ID,TRUNCATE(IFNULL(AVG(AGE),-1),1) AS AGE, TRUNCATE(IFNULL(AVG(TEMP),-1),1) AS TEMP, COUNT(*) AS COUNT
 			    FROM VW_PARTY_ACTIVE_MEMBER
 			    GROUP BY PARTY_ID
 			) E
 			ON A.PARTY_ID = E.PARTY_ID
-			WHERE C.OPEN_AT > SYSDATE + 1
+			WHERE C.OPEN_AT > NOW() + INTERVAL 1 DAY
 		) T
 		
 		<where>
@@ -100,15 +100,15 @@
 		</where>
 		
 		ORDER BY partyId DESC
-		FETCH FIRST 4 ROWS ONLY
+		LIMIT 4
 		
 	</select>
 	
 	<select id="getPartyById" parameterType="long" resultType="com.noexit.app.model.PartyDTO">
 	
 		SELECT A.PARTY_ID AS partyId, A.PARTY_NAME AS partyName , E.CAFE_NAME AS cafeName, D.ROOM_NAME AS themeName
-		, TO_CHAR(C.OPEN_AT,'YYYY-MM-DD') AS resDate
-		, TO_CHAR(C.OPEN_AT,'HH24:MI') AS resTime, B.RES_OPEN_ID AS slotId
+		, DATE_FORMAT(C.OPEN_AT, '%Y-%m-%d') AS resDate
+		, DATE_FORMAT(C.OPEN_AT, '%H:%i') AS resTime, B.RES_OPEN_ID AS slotId
 		, D.MIN_PLAYERS AS minPlayers, D.MAX_PLAYERS AS maxPlayers
 		, D.PRICE AS Price, FN_RESERVATION_CHECK(C.RES_OPEN_ID) AS slotStatus
 		, A.GENDER_ID AS genderId, A.USER_ID AS userID
@@ -141,14 +141,14 @@
 	<insert id="partyApply" parameterType="com.noexit.app.model.PartyApplyDTO">
 		
 		INSERT INTO PARTY_APPLY(APPLY_ID, PARTY_ID, USER_ID,APPLY_MESSAGE, CREATED_AT)
-		VALUES(PARTY_APPLY_SEQ.NEXTVAL,#{partyId},#{userId},#{applyComment},SYSDATE)
+		VALUES(NEXTVAL(PARTY_APPLY_SEQ),#{partyId},#{userId},#{applyComment},NOW())
 		
 	</insert>
 	
 	<select id="getThemeSlotById" parameterType="long" resultType="com.noexit.app.model.ThemeSlotDTO">
 		
 		SELECT A.RES_OPEN_ID AS slotId, C.CAFE_ID AS cafeId, C.CAFE_NAME AS cafeName, B.ROOM_NAME AS themeName, B.ROOM_ID AS themeId
-		, TO_CHAR(A.OPEN_AT,'YYYY-MM-DD') AS resDate, TO_CHAR(A.OPEN_AT,'HH24:MI') AS resTime, B.IS_ADULT AS adult, A.OPEN_AT AS startAt, (A.OPEN_AT + B.DURATION/1440) AS endAt
+		, DATE_FORMAT(A.OPEN_AT, '%Y-%m-%d') AS resDate, DATE_FORMAT(A.OPEN_AT, '%H:%i') AS resTime, B.IS_ADULT AS adult, A.OPEN_AT AS startAt, (A.OPEN_AT + INTERVAL B.DURATION MINUTE) AS endAt
 		, B.MIN_PLAYERS AS minPlayers, B.MAX_PLAYERS AS maxPlayers, B.PRICE AS price, FN_RESERVATION_CHECK(A.RES_OPEN_ID) AS status
 		FROM RES_OPEN A
 		JOIN ROOM B
@@ -162,17 +162,15 @@
 	<insert id="partyInsert" parameterType="com.noexit.app.model.PartyDTO">
 		
 		<selectKey keyProperty="partyId" resultType="Long" order="BEFORE">
-			SELECT PARTY_SEQ.NEXTVAL
+			SELECT NEXTVAL(PARTY_SEQ)
 			FROM DUAL
 		</selectKey>
 	
-		BEGIN
 		INSERT INTO PARTY (PARTY_ID,USER_ID,PARTY_NAME,GENDER_ID,MESSAGE,CREATED_AT)
-		VALUES(#{partyId},#{userId},#{partyName},#{genderId},#{partyComment},SYSDATE);
+		VALUES(#{partyId},#{userId},#{partyName},#{genderId},#{partyComment},NOW());
 		
 		INSERT INTO PARTY_ROOM (PARTY_ROOM_ID, RES_OPEN_ID, PARTY_ID, CREATED_AT)
-		VALUES (PARTY_ROOM_SEQ.NEXTVAL,#{slotId},#{partyId},SYSDATE);
-		END;
+		VALUES (NEXTVAL(PARTY_ROOM_SEQ),#{slotId},#{partyId},NOW());
 		
 	</insert>
 
@@ -187,13 +185,13 @@
 	<insert id="partyDelete" parameterType="long">
 	
 		INSERT INTO PARTY_DROP(PARTY_DROP_ID, PARTY_ID, CREATED_AT)
-		VALUES(PARTY_DROP_SEQ.NEXTVAL,#{partyId},SYSDATE)
+		VALUES(NEXTVAL(PARTY_DROP_SEQ),#{partyId},NOW())
 		
 	</insert>
 	
 	<select id="getPartyCommentList" parameterType="map" resultType="com.noexit.app.model.PartyCommentDTO">
 		
-		SELECT A.MESSAGE_ID AS commentId,A.PARTY_ID, B.NICKNAME AS nickName, A.CONTENT AS partyComment, A.USER_ID AS userId, TO_CHAR(A.CREATED_AT,'MM-DD HH24:MI') AS createdAt
+		SELECT A.MESSAGE_ID AS commentId,A.PARTY_ID, B.NICKNAME AS nickName, A.CONTENT AS partyComment, A.USER_ID AS userId, DATE_FORMAT(A.CREATED_AT, '%m-%d %H:%i') AS createdAt
 		FROM PARTY_MESSAGE A
 		JOIN USER_ACCOUNT B
 		ON A.USER_ID = B.USER_ID
@@ -215,14 +213,14 @@
 	<insert id="partyCommentInsert" parameterType="com.noexit.app.model.PartyCommentDTO">
 	
 		INSERT INTO PARTY_MESSAGE(MESSAGE_ID,PARTY_ID,CONTENT,USER_ID,CREATED_AT)
-		VALUES(PARTY_MESSAGE_SEQ.NEXTVAL,#{partyId},#{partyComment},#{userId},SYSDATE)
+		VALUES(NEXTVAL(PARTY_MESSAGE_SEQ),#{partyId},#{partyComment},#{userId},NOW())
 		
 	</insert>	
 	
 	<insert id="partyCommentDelete" parameterType="long">
 	
 		INSERT INTO MESSAGE_DELETE(DELETE_ID, MESSAGE_ID, DELETED_AT)
-		VALUES(MESSAGE_DELETE_SEQ.NEXTVAL,#{commentId},SYSDATE)
+		VALUES(NEXTVAL(MESSAGE_DELETE_SEQ),#{commentId},NOW())
 			
 	</insert>
 	
@@ -267,24 +265,22 @@
 	<update id="partyReady" parameterType="Long">
 		
 		UPDATE PARTY_MEMBER
-		SET READY_AT = SYSDATE
+		SET READY_AT = NOW()
 		WHERE APPLY_ID = #{applyId}
 		
 	</update>
 	
 	<delete id="partyOut" parameterType="long">
 		
-		BEGIN
         DELETE FROM PARTY_MEMBER WHERE APPLY_ID = #{applyId};
         DELETE FROM PARTY_APPLY WHERE APPLY_ID = #{applyId};
-   	 	END;
 		
 	</delete>
 	
 	<insert id="partyKick" parameterType="long">
 		
 		INSERT INTO PARTY_KICK(PARTY_KICK_ID,MEMBER_ID,CREATED_AT)
-		VALUES(PARTY_KICK_SEQ.NEXTVAL,#{crewId},SYSDATE)
+		VALUES(NEXTVAL(PARTY_KICK_SEQ),#{crewId},NOW())
 		
 	</insert>	
 	
@@ -321,7 +317,7 @@
 	<insert id="aprvApply" parameterType="Long">
 		
 		INSERT INTO PARTY_MEMBER(MEMBER_ID,APPLY_ID,READY_AT,JOINED_AT)
-		VALUES(PARTY_MEMBER_SEQ.NEXTVAL,#{applyId},NULL,SYSDATE)
+		VALUES(NEXTVAL(PARTY_MEMBER_SEQ),#{applyId},NULL,NOW())
 		
 	</insert>
 	
@@ -364,8 +360,8 @@
 	<select id="getMyPartyApplyList" parameterType="Long" resultType="com.noexit.app.model.MyPartyDTO">
 	
 		SELECT B.PARTY_NAME AS partyName, E.ROOM_NAME AS themeName
-		, TO_CHAR(D.OPEN_AT,'YYYY-MM-DD') AS resDate
-		, TO_CHAR(D.OPEN_AT,'HH24:MI') AS resTime, A.APPLY_ID applyId
+		, DATE_FORMAT(D.OPEN_AT, '%Y-%m-%d') AS resDate
+		, DATE_FORMAT(D.OPEN_AT, '%H:%i') AS resTime, A.APPLY_ID applyId
 		FROM PARTY_APPLY A
 		JOIN PARTY B
 		ON A.PARTY_ID = B.PARTY_ID
@@ -389,8 +385,8 @@
 	<select id="getMyPartyList" parameterType="Long" resultType="com.noexit.app.model.MyPartyDTO">
 	
 		SELECT B.PARTY_NAME AS partyName, E.ROOM_NAME AS themeName
-		, TO_CHAR(D.OPEN_AT,'YYYY-MM-DD') AS resDate
-		, TO_CHAR(D.OPEN_AT,'HH24:MI') AS resTime
+		, DATE_FORMAT(D.OPEN_AT, '%Y-%m-%d') AS resDate
+		, DATE_FORMAT(D.OPEN_AT, '%H:%i') AS resTime
 		, B.PARTY_ID AS partyId
 		, FN_GET_PARTY_CONDITION(A.PARTY_ID) AS partyStatus
 		FROM VW_PARTY_ACTIVE_MEMBER A
@@ -410,10 +406,10 @@
 	<select id="getMyPartyKickList" parameterType="Long" resultType="com.noexit.app.model.MyPartyDTO">
 	
 		SELECT D.PARTY_NAME AS partyName, G.ROOM_NAME AS themeName
-		, TO_CHAR(F.OPEN_AT,'YYYY-MM-DD') AS resDate
-		, TO_CHAR(F.OPEN_AT,'HH24:MI') AS resTime
-		, TO_CHAR(A.CREATED_AT,'YYYY-MM-DD') AS kickDate
-		, TO_CHAR(A.CREATED_AT,'HH24:MI') AS kickTime
+		, DATE_FORMAT(F.OPEN_AT, '%Y-%m-%d') AS resDate
+		, DATE_FORMAT(F.OPEN_AT, '%H:%i') AS resTime
+		, DATE_FORMAT(A.CREATED_AT, '%Y-%m-%d') AS kickDate
+		, DATE_FORMAT(A.CREATED_AT, '%H:%i') AS kickTime
 		FROM PARTY_KICK A
 		JOIN PARTY_MEMBER B
 		ON A.MEMBER_ID = B.MEMBER_ID
@@ -427,7 +423,7 @@
 		ON E.RES_OPEN_ID = F.RES_OPEN_ID
 		JOIN ROOM G
 		ON F.ROOM_ID = G.ROOM_ID
-		WHERE C.USER_ID = #{userId} AND A.CREATED_AT > SYSDATE - 7
+		WHERE C.USER_ID = #{userId} AND A.CREATED_AT > NOW() - INTERVAL 7 DAY
 		ORDER BY A.CREATED_AT DESC
 		
 	</select>
@@ -460,12 +456,12 @@
 	
 	<select id="getSlotList" parameterType="Long" resultType="com.noexit.app.model.ThemeSlotDTO">
 		
-		SELECT T.RES_OPEN_ID AS slotId, TO_CHAR(T.OPEN_AT,'YYYY-MM-DD HH24:MI') AS resDate
+		SELECT T.RES_OPEN_ID AS slotId, DATE_FORMAT(T.OPEN_AT, '%Y-%m-%d %H:%i') AS resDate
 		FROM 
 		(
 		    SELECT RES_OPEN_ID, OPEN_AT, FN_RESERVATION_CHECK(RES_OPEN_ID) AS STATUS
 		    FROM RES_OPEN
-		    WHERE ROOM_ID = #{themeId} AND OPEN_AT > SYSDATE + 1
+		    WHERE ROOM_ID = #{themeId} AND OPEN_AT > NOW() + INTERVAL 1 DAY
 		) T
 		WHERE T.STATUS = 1
 		
@@ -484,7 +480,7 @@
 	<update id="partyRoomUpdate" parameterType="map">
 		
 		UPDATE PARTY_ROOM
-		SET RES_OPEN_ID = #{slotId}, CREATED_AT = SYSDATE
+		SET RES_OPEN_ID = #{slotId}, CREATED_AT = NOW()
 		WHERE PARTY_ID = #{partyId}
 		
 	</update>
@@ -493,7 +489,7 @@
 		
 		SELECT COUNT(*)
 		FROM VW_MEMBER_BOOKED_TIME
-		WHERE USER_ID = USER_ID = #{userId}
+		WHERE USER_ID = #{userId}
 		  AND START_AT &lt; #{endAt}
 		  AND END_AT   &gt; #{startAt}
 	</select>

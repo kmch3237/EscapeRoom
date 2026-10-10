@@ -7,7 +7,7 @@
 
 	<insert id="insertAttendance" parameterType="com.noexit.app.model.AttendanceListDTO">
 		<selectKey keyProperty="attendanceId" resultType="Long" order="BEFORE">
-			SELECT ATTENDANCE_SEQ.NEXTVAL FROM DUAL
+			SELECT NEXTVAL(ATTENDANCE_SEQ) FROM DUAL
 		</selectKey>
 		INSERT INTO ATTENDANCE (ATTENDANCE_ID, RESERVATION_ID, USER_ID)
 		VALUES (#{attendanceId}, #{reservationId}, #{userId})
@@ -15,7 +15,7 @@
 
 	<insert id="insertAttendDetail" parameterType="com.noexit.app.model.AttendanceListDTO">
 		INSERT INTO ATTENDANCE_DETAIL (DETAIL_ID, ATTENDANCE_ID, USER_ID, ATTEND_STATUS_ID)
-		VALUES (ATTENDANCE_DETAIL_SEQ.NEXTVAL, #{attendanceId}, #{leaderId}, #{attendStatusId})
+		VALUES (NEXTVAL(ATTENDANCE_DETAIL_SEQ), #{attendanceId}, #{leaderId}, #{attendStatusId})
 	</insert>
 
 
@@ -32,21 +32,21 @@
 		 WHERE C.USER_ID = #{ownerUserId}
 		 AND VRA.CANCEL_ID IS NULL
 		   <![CDATA[
-		 AND VRA.OPEN_AT <= SYSDATE + 1/24
+		 AND VRA.OPEN_AT <= NOW() + INTERVAL 1 HOUR
 		   ]]>
 		 ORDER BY VRA.OPEN_AT DESC
-		 OFFSET #{offset} ROWS FETCH FIRST #{size} ROWS ONLY
+		 LIMIT #{size} OFFSET #{offset}
 	</select>
 
 	<!-- 출석체크 목록 갯수 (사장, 페이징용) -->
 	<select id="dataCountByOwnerUserId" parameterType="map" resultType="int">
-		SELECT NVL(COUNT(*), 0)
+		SELECT COUNT(*)
 		  FROM VW_RESERVATION_ALL VRA
 		  JOIN CAFE C ON VRA.CAFE_ID = C.CAFE_ID
 		 WHERE C.USER_ID = #{ownerUserId}
 		 AND VRA.CANCEL_ID IS NULL
 		   <![CDATA[
-		 AND VRA.OPEN_AT <= SYSDATE + 1/24
+		 AND VRA.OPEN_AT <= NOW() + INTERVAL 1 HOUR
 		   ]]>
 	</select>
 
@@ -58,26 +58,26 @@
 		       VRA.TOTAL_MEMBER,
 		       FN_GET_ATTEND_STATUS(VRA.RESERVATION_ID, VRA.LEADER_ID) AS STATUS_NAME
 		  FROM VW_RESERVATION_ALL VRA
-		  JOIN V_ACTIVE_MANAGER VAM ON VAM.CAFE_ID = VRA.CAFE_ID
+		  JOIN VW_ACTIVE_MANAGER VAM ON VAM.CAFE_ID = VRA.CAFE_ID
 		  JOIN USER_ACCOUNT UA ON VRA.LEADER_ID = UA.USER_ID
 		 WHERE VAM.USER_ID = #{managerUserId}
 		 AND VRA.CANCEL_ID IS NULL
 		   <![CDATA[
-		   AND VRA.OPEN_AT <= SYSDATE + 1/24
+		   AND VRA.OPEN_AT <= NOW() + INTERVAL 1 HOUR
 		   ]]>
 		 ORDER BY VRA.OPEN_AT DESC
-		 OFFSET #{offset} ROWS FETCH FIRST #{size} ROWS ONLY
+		 LIMIT #{size} OFFSET #{offset}
 	</select>
 
 	<!-- 출석체크 목록 갯수 (매니저, 페이징용) -->
 	<select id="dataCountByManagerUserId" parameterType="map" resultType="int">
-		SELECT NVL(COUNT(*), 0)
+		SELECT COUNT(*)
 		  FROM VW_RESERVATION_ALL VRA
-		  JOIN V_ACTIVE_MANAGER VAM ON VAM.CAFE_ID = VRA.CAFE_ID
+		  JOIN VW_ACTIVE_MANAGER VAM ON VAM.CAFE_ID = VRA.CAFE_ID
 		 WHERE VAM.USER_ID = #{managerUserId}
 		 AND VRA.CANCEL_ID IS NULL
 		   <![CDATA[
-		   AND VRA.OPEN_AT <= SYSDATE + 1/24
+		   AND VRA.OPEN_AT <= NOW() + INTERVAL 1 HOUR
 		   ]]>
 	</select>
 
@@ -101,8 +101,8 @@
 		      AND NOT EXISTS (
 		         SELECT 1 FROM PARTY_KICK PK WHERE PK.MEMBER_ID = PM.MEMBER_ID
 		       )
-		  )
-		  ORDER BY DECODE(POSITION, 'HOST', 0, 1), USER_ID
+		  ) X
+		  ORDER BY CASE WHEN POSITION = 'HOST' THEN 0 ELSE 1 END, USER_ID
 		 
 	</select>
 	
@@ -111,7 +111,7 @@
 		SELECT CASE
 		       WHEN VRA.CANCEL_ID IS NULL
 		       <![CDATA[
-		        AND VRA.OPEN_AT - 1/24 <= SYSDATE THEN 1
+		        AND VRA.OPEN_AT - INTERVAL 1 HOUR <= NOW() THEN 1
 		       ]]>
 		       ELSE 0 END
 		  FROM VW_RESERVATION_ALL VRA
@@ -126,7 +126,7 @@
 	<!-- 파티원 1명당 출석 상태 INSERT -->
 	<insert id="insertAttendDetailByUser" parameterType="com.noexit.app.model.AttendItemDTO">
 		INSERT INTO ATTENDANCE_DETAIL (DETAIL_ID, ATTENDANCE_ID, USER_ID, ATTEND_STATUS_ID)
-		VALUES (ATTENDANCE_DETAIL_SEQ.NEXTVAL, #{attendanceId}, #{userId}, #{attendStatusId})
+		VALUES (NEXTVAL(ATTENDANCE_DETAIL_SEQ), #{attendanceId}, #{userId}, #{attendStatusId})
 	</insert>
 
 	<!-- 노쇼 시 매너온도 차감 -->
@@ -166,12 +166,12 @@
 		  JOIN ATTENDANCE A ON A.RESERVATION_ID = VRA.RESERVATION_ID
 		 WHERE C.USER_ID = #{ownerUserId}
 		 ORDER BY VRA.OPEN_AT DESC
-		 OFFSET #{offset} ROWS FETCH FIRST #{size} ROWS ONLY
+		 LIMIT #{size} OFFSET #{offset}
 	</select>
 
 	<!-- 출석기록 갯수 (사장, 페이징용) -->
 	<select id="dataCountHistoryByOwnerUserId" parameterType="map" resultType="int">
-		SELECT NVL(COUNT(*), 0)
+		SELECT COUNT(*)
 		  FROM VW_RESERVATION_ALL VRA
 		  JOIN CAFE C ON VRA.CAFE_ID = C.CAFE_ID
 		  JOIN ATTENDANCE A ON A.RESERVATION_ID = VRA.RESERVATION_ID
@@ -194,19 +194,19 @@
 		         WHERE A2.RESERVATION_ID = VRA.RESERVATION_ID
 		           AND AD.ATTEND_STATUS_ID = 2) AS NOSHOW_COUNT
 		  FROM VW_RESERVATION_ALL VRA
-		  JOIN V_ACTIVE_MANAGER VAM ON VAM.CAFE_ID = VRA.CAFE_ID
+		  JOIN VW_ACTIVE_MANAGER VAM ON VAM.CAFE_ID = VRA.CAFE_ID
 		  JOIN USER_ACCOUNT UA ON VRA.LEADER_ID = UA.USER_ID
 		  JOIN ATTENDANCE A ON A.RESERVATION_ID = VRA.RESERVATION_ID
 		 WHERE VAM.USER_ID = #{managerUserId}
 		 ORDER BY VRA.OPEN_AT DESC
-		 OFFSET #{offset} ROWS FETCH FIRST #{size} ROWS ONLY
+		 LIMIT #{size} OFFSET #{offset}
 	</select>
 
 	<!-- 출석기록 갯수 (매니저, 페이징용) -->
 	<select id="dataCountHistoryByManagerUserId" parameterType="map" resultType="int">
-		SELECT NVL(COUNT(*), 0)
+		SELECT COUNT(*)
 		  FROM VW_RESERVATION_ALL VRA
-		  JOIN V_ACTIVE_MANAGER VAM ON VAM.CAFE_ID = VRA.CAFE_ID
+		  JOIN VW_ACTIVE_MANAGER VAM ON VAM.CAFE_ID = VRA.CAFE_ID
 		  JOIN ATTENDANCE A ON A.RESERVATION_ID = VRA.RESERVATION_ID
 		 WHERE VAM.USER_ID = #{managerUserId}
 	</select>
@@ -219,7 +219,7 @@
        JOIN ATTENDANCE_DETAIL AD ON A.ATTENDANCE_ID = AD.ATTENDANCE_ID
        JOIN USER_ACCOUNT UA ON AD.USER_ID = UA.USER_ID
        LEFT JOIN ATTEND_STATUS TS ON AD.ATTEND_STATUS_ID = TS.STATUS_ID
-       WHERE A.RESERVATION_ID = ${reservationId}
+       WHERE A.RESERVATION_ID = #{reservationId}
        ORDER BY AD.USER_ID
 	</select>
 	

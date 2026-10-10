@@ -1,5 +1,5 @@
 server:
-  port: 3306
+  port: 8080
   servlet:
     encoding:
       charset: UTF-8
@@ -14,15 +14,16 @@ spring:
       prefix: /WEB-INF/views/
       suffix: .jsp
   datasource:
-    url: jdbc:oracle:thin:@//211.238.142.123/xe
+    url: jdbc:mariadb://localhost:3306/noexit?allowMultiQueries=true
+    driver-class-name: org.mariadb.jdbc.Driver
     hikari:
-      username: SAPIENS
-      password: java1234
+      username: noexit
+      password: ${DB_PASSWORD}
   mail:
     host: smtp.gmail.com
     port: 587
     username: ${MAIL_USER}
-    password: ${MAIL_PASS}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
